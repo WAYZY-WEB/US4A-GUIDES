@@ -1,6 +1,7 @@
 import React,{useEffect,useState}from'react';
 import{createRoot}from'react-dom/client';
-import{BookOpen,Calculator,CalendarDays,Castle,Home,Languages,Lock,Menu,Search,Shield,Swords,Trophy}from'lucide-react';
+import{ArrowLeft,BookOpen,Calculator,CalendarDays,Castle,ExternalLink,Home,Languages,Lock,Menu,Search,Shield,Swords,Trophy}from'lucide-react';
+import{gearDetails,guideLibrary,libraryUi}from'./guides.js';
 import'./style.css';
 
 const strings={
@@ -56,6 +57,10 @@ function App(){
   }
 
   const current=pages.find(([id])=>id===page);
+  const categoryPage=categories.find(([id])=>id===page);
+  const currentGuides=guideLibrary[page]??[];
+  const libraryText=libraryUi[lang]??libraryUi.en;
+  const currentGearDetails=gearDetails[lang]??gearDetails.en;
   const CurrentIcon=current?.[1]??BookOpen;
 
   return <>
@@ -95,7 +100,17 @@ function App(){
           </div>
         </section>
         {matches.length?<div className="cards">{matches.map(([id,Icon,label,image])=><button className="card" key={id} onClick={()=>go(id)}><img src={image} alt="" width="720" height="720" loading="lazy"/><span className="card-overlay" aria-hidden="true"/><span className="card-copy"><Icon size={25}/><strong className="card-title">{label}</strong><span>{t.read} <b aria-hidden="true">→</b></span></span></button>)}</div>:<p className="no-results">{t.noResults}</p>}
-      </>:page==='alliance'?<section className="inner"><Shield size={42}/><h1>{t.private}</h1><p>{t.privateDesc}</p><div className="locked"><Lock size={22}/>{t.soon}</div></section>:<section className="inner"><CurrentIcon size={42}/><div className="eyebrow">US4A — GUIDES</div><h1>{current?.[2]}</h1><p>{t.soon}</p><div className="placeholder"><CurrentIcon size={40}/><span>{t.soon}</span></div></section>}
+      </>:page==='alliance'?<section className="inner"><Shield size={42}/><h1>{t.private}</h1><p>{t.privateDesc}</p><div className="locked"><Lock size={22}/>{t.soon}</div></section>:categoryPage?<section className="category-page">
+        <button className="back-button" onClick={()=>go('home')}><ArrowLeft size={18}/>{t.home}</button>
+        <div className="category-hero">
+          <img src={categoryPage[3]} alt="" width="720" height="720"/>
+          <span className="category-hero-shade" aria-hidden="true"/>
+          <div className="category-hero-copy"><div className="eyebrow">US4A — WAYZY</div><h1>{categoryPage[2]}</h1><p>{currentGuides.length} {currentGuides.length===1?libraryText.guide:libraryText.guides}</p></div>
+        </div>
+        <p className="source-note">{libraryText.sourceNote} <a href="https://toplordsguides.netlify.app/" target="_blank" rel="noreferrer">Top Lords Guides <ExternalLink size={14}/></a></p>
+        {page==='gear'?<section className="quick-notes"><div className="eyebrow">{libraryText.quickNotes}</div><div className="quick-notes-grid">{currentGearDetails.map(note=><article key={note.title}><h2>{note.title}</h2><ul>{note.bullets.map(bullet=><li key={bullet}>{bullet}</li>)}</ul></article>)}</div></section>:null}
+        <div className="guide-list">{currentGuides.map((guide,index)=><article className="guide-item" key={guide.source}><span className="guide-number">{String(index+1).padStart(2,'0')}</span><div><h2>{guide.title}</h2><p>{libraryText.guideSummary}</p></div><a href={guide.source} target="_blank" rel="noreferrer">{libraryText.openSource}<ExternalLink size={16}/></a></article>)}</div>
+      </section>:<section className="inner"><CurrentIcon size={42}/><div className="eyebrow">US4A — GUIDES</div><h1>{current?.[2]}</h1><p>{t.soon}</p><div className="placeholder"><CurrentIcon size={40}/><span>{t.soon}</span></div></section>}
     </main>
     <footer><span>US4A — GUIDES · WAYZY</span><span>{t.notice}</span></footer>
   </>;
