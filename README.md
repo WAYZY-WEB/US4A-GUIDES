@@ -1,6 +1,6 @@
 # Top Lords Guides — Phase 1
 
-Prototype public React/Vite, avec interface responsive, navigation et langues FR/EN/RU/TR.
+Prototype public React/Vite, avec interface responsive, navigation et huit langues : FR/EN/ES/DE/RU/TR/KO/AR.
 
 ## Démarrer localement
 
