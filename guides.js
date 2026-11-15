@@ -50,17 +50,17 @@ export const guideLibrary={
     ['Scholar Tower I Upgrade Costs','scholar-tower-i-upgrade-costs',{fr:'Coûts d’amélioration de la tour des érudits I'}]
   ]),
   'bosses-events':makeGuides('bosses-events',[
-    ['Tusk Berserker (Mon–Thu)','tusk-berserker-mon-thu'],
-    ['Tusk Boarlord (Tue–Fri)','tusk-boarlord-tue-fri'],
-    ['Tusk Butcher (Wed–Sat)','tusk-butcher-wed-sat'],
-    ['Imperial Enforcer Hunt','imperial-enforcer-hunt'],
-    ['Imperial Pursuer Rally','imperial-pursuer-rally'],
-    ['Vanguard Marshall','vanguard-marshall'],
-    ['Tusk Spoils Rush','tusk-spoils-rush'],
-    ['Caravan Trade','caravan-trade'],
-    ['Race to Ace','race-to-ace'],
-    ['Boat Captain Guide','boat-captain-guide'],
-    ['Tusk Vanguard','tusk-vanguard']
+    ['Tusk Berserker (Mon–Thu)','tusk-berserker-mon-thu',{fr:'Tusk Berserker (lun.–jeu.)'}],
+    ['Tusk Boarlord (Tue–Fri)','tusk-boarlord-tue-fri',{fr:'Tusk Boarlord (mar.–ven.)'}],
+    ['Tusk Butcher (Wed–Sat)','tusk-butcher-wed-sat',{fr:'Tusk Butcher (mer.–sam.)'}],
+    ['Imperial Enforcer Hunt','imperial-enforcer-hunt',{fr:'Chasse aux Exécuteurs impériaux'}],
+    ['Imperial Pursuer Rally','imperial-pursuer-rally',{fr:'Traqueur impérial — guide de ralliement'}],
+    ['Vanguard Marshall','vanguard-marshall',{fr:'Maréchal de l’avant-garde'}],
+    ['Tusk Spoils Rush','tusk-spoils-rush',{fr:'Ruée vers le butin Tusk'}],
+    ['Caravan Trade','caravan-trade',{fr:'Commerce de caravanes'}],
+    ['Race to Ace','race-to-ace',{fr:'Race to Ace'}],
+    ['Boat Captain Guide','boat-captain-guide',{fr:'Guide du capitaine de bateau'}],
+    ['Tusk Vanguard','tusk-vanguard',{fr:'Avant-garde Tusk'}]
   ]),
   'combat-rallies':makeGuides('combat-rallies',[
     ['Ambush Rally','ambush-rally'],
