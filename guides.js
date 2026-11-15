@@ -10,20 +10,20 @@ const makeGuides=(category,items)=>items.map(([title,slug,localized={}])=>({
 
 export const guideLibrary={
   'alliance-duel':makeGuides('alliance-duel',[
-    ['Alliance Duel Overview','alliance-duel-overview'],
-    ['Daily Checklist','daily-checklist'],
-    ['Day 0 — Sunday Setup','day-0-sunday-setup'],
-    ['Day 1','day-1'],
-    ['Day 2','day-2'],
-    ['Day 3','day-3'],
-    ['Day 4 — Hero Day','day-4-hero-day'],
-    ['Day 5','day-5'],
-    ['Day 6','day-6']
+    ['Alliance Duel Overview','alliance-duel-overview',{fr:'Duel d’alliance — guide complet'}],
+    ['Daily Checklist','daily-checklist',{fr:'Liste quotidienne du Duel'}],
+    ['Day 0 — Sunday Setup','day-0-sunday-setup',{fr:'Jour 0 — préparation du dimanche'}],
+    ['Day 1','day-1',{fr:'Jour 1 — ressources de la ville'}],
+    ['Day 2','day-2',{fr:'Jour 2 — construction et activités'}],
+    ['Day 3','day-3',{fr:'Jour 3 — recherche et ressources'}],
+    ['Day 4 — Hero Day','day-4-hero-day',{fr:'Jour 4 — jour des héros'}],
+    ['Day 5','day-5',{fr:'Jour 5 — entraînement et primes'}],
+    ['Day 6','day-6',{fr:'Jour 6 — collecte et puissance'}]
   ]),
   routines:makeGuides('routines',[
-    ['Every Day in an Alliance','every-day-in-an-alliance'],
-    ['Weekly Alliance Tasks','weekly-alliance-tasks'],
-    ['Bounty Tasks Guide','bounty-tasks-guide']
+    ['Every Day in an Alliance','every-day-in-an-alliance',{fr:'Chaque jour dans une alliance'}],
+    ['Weekly Alliance Tasks','weekly-alliance-tasks',{fr:'Tâches hebdomadaires de l’alliance'}],
+    ['Bounty Tasks Guide','bounty-tasks-guide',{fr:'Guide des tâches de prime'}]
   ]),
   'heroes-squads':makeGuides('heroes-squads',[
     ['Hero Faction Counter','hero-faction-counter'],
