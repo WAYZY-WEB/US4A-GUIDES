@@ -63,13 +63,13 @@ export const guideLibrary={
     ['Tusk Vanguard','tusk-vanguard',{fr:'Avant-garde Tusk'}]
   ]),
   'combat-rallies':makeGuides('combat-rallies',[
-    ['Ambush Rally','ambush-rally'],
-    ['Surprise Rally','surprise-rally'],
-    ['Surviving SvS','surviving-svs'],
-    ['Arena Strategy','arena-strategy'],
-    ['Ambush Rally Ready Check','ambush-rally-ready-check'],
-    ['Gold Mine Conquest','gold-mine-conquest'],
-    ['Wall Defense Setup','wall-defense-setup']
+    ['Ambush Rally','ambush-rally',{fr:'Ralliement embuscade'}],
+    ['Surprise Rally','surprise-rally',{fr:'Ralliement surprise'}],
+    ['Surviving SvS','surviving-svs',{fr:'Survivre au SvS'}],
+    ['Arena Strategy','arena-strategy',{fr:'Stratégie d’arène'}],
+    ['Ambush Rally Ready Check','ambush-rally-ready-check',{fr:'Vérification « Prêt » — ralliement embuscade'}],
+    ['Gold Mine Conquest','gold-mine-conquest',{fr:'Conquête de la mine d’or'}],
+    ['Wall Defense Setup','wall-defense-setup',{fr:'Configuration de la défense du mur'}]
   ]),
   'community-rules':makeGuides('community-rules',[
     ['In-Server Attack Policy','in-server-attack-policy'],
