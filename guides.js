@@ -1,4 +1,12 @@
-const makeGuides=(category,items)=>items.map(([title,slug])=>({title,slug,image:`/images/guides/${category}/${slug}.jpg`}));
+const makeGuides=(category,items)=>items.map(([title,slug,localized={}])=>({
+  title,
+  slug,
+  image:`/images/guides/${category}/${slug}.jpg`,
+  localized:Object.fromEntries(Object.entries(localized).map(([language,localizedTitle])=>[
+    language,
+    {title:localizedTitle,image:`/images/guides/${language}/${category}/${slug}.jpg`}
+  ]))
+}));
 
 export const guideLibrary={
   'alliance-duel':makeGuides('alliance-duel',[
@@ -26,9 +34,9 @@ export const guideLibrary={
     ['Hero Power Upgrade Bonuses','hero-power-upgrade-bonuses']
   ]),
   gear:makeGuides('gear',[
-    ['Gear Basics','gear-basics'],
-    ['Gear Promotion','gear-promotion'],
-    ['Dragonslayer Gear','dragonslayer-gear']
+    ['Gear Basics','gear-basics',{fr:'Bases de l’équipement'}],
+    ['Gear Promotion','gear-promotion',{fr:'Promotion d’équipement'}],
+    ['Dragonslayer Gear','dragonslayer-gear',{fr:'Épée tueuse de dragons'}]
   ]),
   'troops-training':makeGuides('troops-training',[
     ['Troop Soldier Levels','troop-soldier-levels'],

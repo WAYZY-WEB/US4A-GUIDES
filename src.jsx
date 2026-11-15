@@ -1,11 +1,11 @@
 import React,{useEffect,useState}from'react';
 import{createRoot}from'react-dom/client';
-import{ArrowLeft,BookOpen,Calculator,CalendarDays,Castle,Home,Languages,Lock,Menu,Search,Shield,Swords,Trophy}from'lucide-react';
+import{ArrowLeft,BookOpen,Calculator,CalendarDays,Castle,Home,Languages,Lock,Menu,Search,Shield,Swords,Trophy,X,ZoomIn}from'lucide-react';
 import{gearDetails,guideLibrary,libraryUi}from'./guides.js';
 import'./style.css';
 
 const strings={
-  fr:{language:'Langue',menu:'Ouvrir le menu',subtitle:'Guides et stratégies communautaires',home:'Accueil',hub:'Centre de stratégie communautaire',welcome:'Le Panthéon des Dieux',intro:'Guides, héros, événements et outils pour maîtriser Top Lords.',guides:'Guides',heroes:'Héros & PvP',tools:'Outils',events:'Événements',contest:'Concours',alliance:'Alliance',allianceDuel:'Duel d’alliance',routines:'Routines quotidiennes & hebdomadaires',heroesSquads:'Héros & escouades',gear:'Équipement',troopsTraining:'Troupes & entraînement',buildings:'Bâtiments',bossesEvents:'Boss & événements',combatRallies:'Combats & ralliements',communityRules:'Règles & communauté',private:'Espace privé de l’alliance',privateDesc:'L’accès sécurisé par code sera activé en phase 2. Aucun contenu privé n’est exposé dans cette version.',soon:'Bientôt disponible',search:'Rechercher une rubrique…',read:'Explorer',noResults:'Aucune rubrique ne correspond à votre recherche.',notice:'Prototype public : aucune authentification ni base de données configurée.'},
+  fr:{language:'Langue',menu:'Ouvrir le menu',subtitle:'Guides et stratégies communautaires',home:'Accueil',hub:'Centre de stratégie communautaire',welcome:'Le Panthéon des Dieux',intro:'Guides, héros, événements et outils pour maîtriser Top Lords.',guides:'Guides',heroes:'Héros & PvP',tools:'Outils',events:'Événements',contest:'Concours',alliance:'Alliance',allianceDuel:'Duel d’alliance',routines:'Routines quotidiennes & hebdomadaires',heroesSquads:'Héros & escouades',gear:'Équipement',troopsTraining:'Troupes & entraînement',buildings:'Bâtiments',bossesEvents:'Boss & événements',combatRallies:'Combats & ralliements',communityRules:'Règles & communauté',private:'Espace privé de l’alliance',privateDesc:'L’accès sécurisé par code sera activé en phase 2. Aucun contenu privé n’est exposé dans cette version.',soon:'Bientôt disponible',search:'Rechercher une rubrique…',read:'Explorer',viewGuide:'Voir le guide français',closeGuide:'Fermer le guide',noResults:'Aucune rubrique ne correspond à votre recherche.',notice:'Prototype public : aucune authentification ni base de données configurée.'},
   en:{language:'Language',menu:'Open menu',subtitle:'Community guides and strategies',home:'Home',hub:'Community strategy hub',welcome:'The Pantheon of Gods',intro:'Guides, heroes, events and tools to master Top Lords.',guides:'Guides',heroes:'Heroes & PvP',tools:'Tools',events:'Events',contest:'Contest',alliance:'Alliance',allianceDuel:'Alliance Duel',routines:'Daily & Weekly Routines',heroesSquads:'Heroes & Squads',gear:'Gear',troopsTraining:'Troops & Training',buildings:'Buildings',bossesEvents:'Bosses & Events',combatRallies:'Combat & Rallies',communityRules:'Rules & Community',private:'Private alliance area',privateDesc:'Secure code access will be enabled in phase 2. No private content is exposed in this version.',soon:'Coming soon',search:'Search a section…',read:'Explore',noResults:'No section matches your search.',notice:'Public prototype: no authentication or database configured.'},
   es:{language:'Idioma',menu:'Abrir menú',subtitle:'Guías y estrategias de la comunidad',home:'Inicio',hub:'Centro de estrategia comunitaria',welcome:'El Panteón de los Dioses',intro:'Guías, héroes, eventos y herramientas para dominar Top Lords.',guides:'Guías',heroes:'Héroes y PvP',tools:'Herramientas',events:'Eventos',contest:'Concurso',alliance:'Alianza',allianceDuel:'Duelo de alianzas',routines:'Rutinas diarias y semanales',heroesSquads:'Héroes y escuadrones',gear:'Equipo',troopsTraining:'Tropas y entrenamiento',buildings:'Edificios',bossesEvents:'Jefes y eventos',combatRallies:'Combate y reuniones',communityRules:'Reglas y comunidad',private:'Área privada de la alianza',privateDesc:'El acceso seguro por código se activará en la fase 2. Esta versión no expone contenido privado.',soon:'Próximamente',search:'Buscar una sección…',read:'Explorar',noResults:'Ninguna sección coincide con tu búsqueda.',notice:'Prototipo público: sin autenticación ni base de datos configurada.'},
   de:{language:'Sprache',menu:'Menü öffnen',subtitle:'Community-Guides und Strategien',home:'Start',hub:'Community-Strategiezentrum',welcome:'Das Pantheon der Götter',intro:'Guides, Helden, Events und Werkzeuge für Top Lords.',guides:'Guides',heroes:'Helden & PvP',tools:'Werkzeuge',events:'Events',contest:'Wettbewerb',alliance:'Allianz',allianceDuel:'Allianzduell',routines:'Tägliche & wöchentliche Aufgaben',heroesSquads:'Helden & Trupps',gear:'Ausrüstung',troopsTraining:'Truppen & Training',buildings:'Gebäude',bossesEvents:'Bosse & Events',combatRallies:'Kampf & Sammelangriffe',communityRules:'Regeln & Community',private:'Privater Allianzbereich',privateDesc:'Der sichere Codezugang wird in Phase 2 aktiviert. Diese Version zeigt keine privaten Inhalte.',soon:'Demnächst verfügbar',search:'Bereich suchen…',read:'Entdecken',noResults:'Kein Bereich entspricht deiner Suche.',notice:'Öffentlicher Prototyp: keine Anmeldung oder Datenbank eingerichtet.'},
@@ -22,6 +22,7 @@ function App(){
   const[page,setPage]=useState('home');
   const[query,setQuery]=useState('');
   const[mobile,setMobile]=useState(false);
+  const[selectedGuide,setSelectedGuide]=useState(null);
   const t=strings[lang];
   const sections=[
     ['guides',BookOpen,t.guides],
@@ -51,9 +52,21 @@ function App(){
     document.documentElement.dir=lang==='ar'?'rtl':'ltr';
   },[lang]);
 
+  useEffect(()=>{
+    if(!selectedGuide)return undefined;
+    const closeOnEscape=event=>{if(event.key==='Escape')setSelectedGuide(null)};
+    document.body.classList.add('modal-open');
+    window.addEventListener('keydown',closeOnEscape);
+    return()=>{
+      document.body.classList.remove('modal-open');
+      window.removeEventListener('keydown',closeOnEscape);
+    };
+  },[selectedGuide]);
+
   function go(nextPage){
     setPage(nextPage);
     setMobile(false);
+    setSelectedGuide(null);
   }
 
   const current=pages.find(([id])=>id===page);
@@ -76,7 +89,7 @@ function App(){
         </nav>
         <label className="language">
           <Languages size={17}/><span className="sr-only">{t.language}</span>
-          <select aria-label={t.language} value={lang} onChange={event=>setLang(event.target.value)}>
+          <select aria-label={t.language} value={lang} onChange={event=>{setLang(event.target.value);setSelectedGuide(null)}}>
             {Object.entries(languageNames).map(([code,label])=><option key={code} value={code}>{label}</option>)}
           </select>
         </label>
@@ -108,13 +121,29 @@ function App(){
           <div className="category-hero-copy"><div className="eyebrow">US4A — WAYZY</div><h1>{categoryPage[2]}</h1><p>{currentGuides.length} {currentGuides.length===1?libraryText.guide:libraryText.guides}</p></div>
         </div>
         {page==='gear'?<section className="quick-notes"><div className="eyebrow">{libraryText.quickNotes}</div><div className="quick-notes-grid">{currentGearDetails.map(note=><article key={note.title}><h2>{note.title}</h2><ul>{note.bullets.map(bullet=><li key={bullet}>{bullet}</li>)}</ul></article>)}</div></section>:null}
-        <div className="guide-list">{currentGuides.map((guide,index)=><article className="guide-item" key={guide.slug}>
-          <img src={guide.image} alt="" width="720" height="720" loading="lazy"/>
-          <span className="guide-item-shade" aria-hidden="true"/>
-          <div className="guide-item-copy"><span className="guide-number">{String(index+1).padStart(2,'0')}</span><div><h2>{guide.title}</h2><p>{libraryText.guideSummary}</p></div></div>
-        </article>)}</div>
+        <div className="guide-list">{currentGuides.map((guide,index)=>{
+          const localized=guide.localized?.[lang];
+          const image=localized?.image??guide.image;
+          const title=localized?.title??guide.title;
+          return localized?<button type="button" className="guide-item guide-item-localized" key={guide.slug} onClick={()=>setSelectedGuide({image,title})} aria-label={`${t.viewGuide}: ${title}`}>
+            <img src={image} alt="" width="1024" height="1536" loading="lazy"/>
+            <span className="guide-item-shade" aria-hidden="true"/>
+            <span className="guide-preview-badge"><ZoomIn size={16}/>{t.viewGuide}</span>
+            <span className="guide-item-copy"><span className="guide-number">{String(index+1).padStart(2,'0')}</span><span><h2>{title}</h2><p>{libraryText.guideSummary}</p></span></span>
+          </button>:<article className="guide-item" key={guide.slug}>
+            <img src={image} alt="" width="720" height="720" loading="lazy"/>
+            <span className="guide-item-shade" aria-hidden="true"/>
+            <div className="guide-item-copy"><span className="guide-number">{String(index+1).padStart(2,'0')}</span><div><h2>{title}</h2><p>{libraryText.guideSummary}</p></div></div>
+          </article>;
+        })}</div>
       </section>:<section className="inner"><CurrentIcon size={42}/><div className="eyebrow">US4A — GUIDES</div><h1>{current?.[2]}</h1><p>{t.soon}</p><div className="placeholder"><CurrentIcon size={40}/><span>{t.soon}</span></div></section>}
     </main>
+    {selectedGuide?<div className="guide-modal" role="dialog" aria-modal="true" aria-label={selectedGuide.title} onClick={()=>setSelectedGuide(null)}>
+      <div className="guide-modal-panel" onClick={event=>event.stopPropagation()}>
+        <button type="button" className="guide-modal-close" onClick={()=>setSelectedGuide(null)}><X size={20}/>{t.closeGuide}</button>
+        <img src={selectedGuide.image} alt={selectedGuide.title} width="1024" height="1536"/>
+      </div>
+    </div>:null}
     <footer><span>US4A — GUIDES · WAYZY</span><span>{t.notice}</span></footer>
   </>;
 }
