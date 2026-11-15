@@ -1,6 +1,4 @@
-const sourceRoot='https://toplordsguides.netlify.app/g';
-
-const makeGuides=(category,items)=>items.map(([title,slug])=>({title,source:`${sourceRoot}/${category}/${slug}/`}));
+const makeGuides=(category,items)=>items.map(([title,slug])=>({title,slug,image:`/images/guides/${category}/${slug}.jpg`}));
 
 export const guideLibrary={
   'alliance-duel':makeGuides('alliance-duel',[
@@ -14,12 +12,12 @@ export const guideLibrary={
     ['Day 5','day-5'],
     ['Day 6','day-6']
   ]),
-  routines:makeGuides('daily-and-weekly-routines',[
+  routines:makeGuides('routines',[
     ['Every Day in an Alliance','every-day-in-an-alliance'],
     ['Weekly Alliance Tasks','weekly-alliance-tasks'],
     ['Bounty Tasks Guide','bounty-tasks-guide']
   ]),
-  'heroes-squads':makeGuides('heroes-and-squads',[
+  'heroes-squads':makeGuides('heroes-squads',[
     ['Hero Faction Counter','hero-faction-counter'],
     ['Squad & Hero Basics','squad-and-hero-basics'],
     ['Hero Placement','hero-placement'],
@@ -32,7 +30,7 @@ export const guideLibrary={
     ['Gear Promotion','gear-promotion'],
     ['Dragonslayer Gear','dragonslayer-gear']
   ]),
-  'troops-training':makeGuides('troops-and-training',[
+  'troops-training':makeGuides('troops-training',[
     ['Troop Soldier Levels','troop-soldier-levels'],
     ['Waterfall Training','waterfall-training']
   ]),
@@ -43,7 +41,7 @@ export const guideLibrary={
     ['Drill Ground Upgrade Costs','drill-ground-upgrade-costs'],
     ['Scholar Tower I Upgrade Costs','scholar-tower-i-upgrade-costs']
   ]),
-  'bosses-events':makeGuides('bosses-and-events',[
+  'bosses-events':makeGuides('bosses-events',[
     ['Tusk Berserker (Mon–Thu)','tusk-berserker-mon-thu'],
     ['Tusk Boarlord (Tue–Fri)','tusk-boarlord-tue-fri'],
     ['Tusk Butcher (Wed–Sat)','tusk-butcher-wed-sat'],
@@ -56,7 +54,7 @@ export const guideLibrary={
     ['Boat Captain Guide','boat-captain-guide'],
     ['Tusk Vanguard','tusk-vanguard']
   ]),
-  'combat-rallies':makeGuides('combat-and-rallies',[
+  'combat-rallies':makeGuides('combat-rallies',[
     ['Ambush Rally','ambush-rally'],
     ['Surprise Rally','surprise-rally'],
     ['Surviving SvS','surviving-svs'],
@@ -65,7 +63,7 @@ export const guideLibrary={
     ['Gold Mine Conquest','gold-mine-conquest'],
     ['Wall Defense Setup','wall-defense-setup']
   ]),
-  'community-rules':makeGuides('server-23-rules-and-discord',[
+  'community-rules':makeGuides('community-rules',[
     ['In-Server Attack Policy','in-server-attack-policy'],
     ['Alliance Plundering Rulebook','alliance-plundering-rulebook'],
     ['Server-Wide Response','server-wide-response'],
@@ -81,14 +79,14 @@ export const guideLibrary={
 };
 
 export const libraryUi={
-  fr:{guide:'guide',guides:'guides',openSource:'Voir la fiche source',sourceNote:'Index adapté à partir de Top Lords Guides. Les informations restent liées à leur source afin de respecter le travail original.',quickNotes:'Résumé US4A',guideSummary:'Fiche pratique avec les étapes, priorités et coûts utiles pour ce sujet.'},
-  en:{guide:'guide',guides:'guides',openSource:'Open source guide',sourceNote:'Index adapted from Top Lords Guides. Information remains linked to its source to credit the original work.',quickNotes:'US4A summary',guideSummary:'Practical reference covering the useful steps, priorities and costs for this topic.'},
-  es:{guide:'guía',guides:'guías',openSource:'Abrir guía fuente',sourceNote:'Índice adaptado de Top Lords Guides, con enlaces a la fuente original.',quickNotes:'Resumen US4A',guideSummary:'Ficha práctica sobre los pasos, prioridades y costes de este tema.'},
-  de:{guide:'Guide',guides:'Guides',openSource:'Quellguide öffnen',sourceNote:'An Top Lords Guides angepasster Index mit Verweisen auf die Originalquelle.',quickNotes:'US4A-Zusammenfassung',guideSummary:'Praktische Übersicht zu Schritten, Prioritäten und Kosten dieses Themas.'},
-  ru:{guide:'гайд',guides:'гайдов',openSource:'Открыть источник',sourceNote:'Индекс адаптирован из Top Lords Guides со ссылками на оригинальный источник.',quickNotes:'Кратко US4A',guideSummary:'Практическая справка по шагам, приоритетам и затратам.'},
-  tr:{guide:'rehber',guides:'rehber',openSource:'Kaynak rehberi aç',sourceNote:'Top Lords Guides kaynağından uyarlanan ve orijinal kaynağa bağlanan dizin.',quickNotes:'US4A özeti',guideSummary:'Bu konunun adımlarını, önceliklerini ve maliyetlerini özetleyen pratik rehber.'},
-  ko:{guide:'가이드',guides:'가이드',openSource:'원본 가이드 열기',sourceNote:'Top Lords Guides를 바탕으로 구성했으며 원본 출처로 연결됩니다.',quickNotes:'US4A 요약',guideSummary:'이 주제의 단계, 우선순위와 비용을 정리한 실용 가이드입니다.'},
-  ar:{guide:'دليل',guides:'أدلة',openSource:'فتح الدليل الأصلي',sourceNote:'فهرس مقتبس من Top Lords Guides مع روابط إلى المصدر الأصلي.',quickNotes:'ملخص US4A',guideSummary:'مرجع عملي يوضح الخطوات والأولويات والتكاليف المفيدة لهذا الموضوع.'}
+  fr:{guide:'guide',guides:'guides',quickNotes:'Conseils US4A',guideSummary:'Étapes, priorités et coûts utiles, directement dans US4A GUIDES.'},
+  en:{guide:'guide',guides:'guides',quickNotes:'US4A advice',guideSummary:'Useful steps, priorities and costs, directly inside US4A GUIDES.'},
+  es:{guide:'guía',guides:'guías',quickNotes:'Consejos US4A',guideSummary:'Pasos, prioridades y costes útiles, directamente en US4A GUIDES.'},
+  de:{guide:'Guide',guides:'Guides',quickNotes:'US4A-Tipps',guideSummary:'Nützliche Schritte, Prioritäten und Kosten direkt in US4A GUIDES.'},
+  ru:{guide:'гайд',guides:'гайдов',quickNotes:'Советы US4A',guideSummary:'Шаги, приоритеты и затраты прямо в US4A GUIDES.'},
+  tr:{guide:'rehber',guides:'rehber',quickNotes:'US4A önerileri',guideSummary:'Adımlar, öncelikler ve maliyetler doğrudan US4A GUIDES içinde.'},
+  ko:{guide:'가이드',guides:'가이드',quickNotes:'US4A 조언',guideSummary:'단계, 우선순위와 비용을 US4A GUIDES에서 바로 확인하세요.'},
+  ar:{guide:'دليل',guides:'أدلة',quickNotes:'نصائح US4A',guideSummary:'الخطوات والأولويات والتكاليف مباشرة داخل US4A GUIDES.'}
 };
 
 export const gearDetails={
