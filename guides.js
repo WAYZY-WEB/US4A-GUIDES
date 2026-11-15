@@ -39,8 +39,8 @@ export const guideLibrary={
     ['Dragonslayer Gear','dragonslayer-gear',{fr:'Épée tueuse de dragons'}]
   ]),
   'troops-training':makeGuides('troops-training',[
-    ['Troop Soldier Levels','troop-soldier-levels'],
-    ['Waterfall Training','waterfall-training']
+    ['Troop Soldier Levels','troop-soldier-levels',{fr:'Niveaux des soldats'}],
+    ['Waterfall Training','waterfall-training',{fr:'Entraînement en cascade'}]
   ]),
   buildings:makeGuides('buildings',[
     ['Base Building Guide','base-building-guide'],
