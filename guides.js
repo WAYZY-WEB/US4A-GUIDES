@@ -72,17 +72,17 @@ export const guideLibrary={
     ['Wall Defense Setup','wall-defense-setup',{fr:'Configuration de la défense du mur'}]
   ]),
   'community-rules':makeGuides('community-rules',[
-    ['In-Server Attack Policy','in-server-attack-policy'],
-    ['Alliance Plundering Rulebook','alliance-plundering-rulebook'],
-    ['Server-Wide Response','server-wide-response'],
-    ['City Capture Rules','city-capture-rules'],
-    ['Discord Rules','discord-rules'],
-    ['Discord iTranslator','discord-itranslator'],
-    ['Kingdom Titles & Favor','kingdom-titles-and-favor'],
-    ['Royal Favor Buffs','royal-favor-buffs'],
-    ['NAP 15 Relocation Guide','nap-15-relocation-guide'],
-    ['Target Identification Guide','target-identification-guide'],
-    ['RSS Tile Etiquette','rss-tile-etiquette']
+    ['In-Server Attack Policy','in-server-attack-policy',{fr:'Attaques internes — bonnes pratiques'}],
+    ['Alliance Plundering Rulebook','alliance-plundering-rulebook',{fr:'Pillage sans toucher aux alliés'}],
+    ['Server-Wide Response','server-wide-response',{fr:'Incident interne — résolution'}],
+    ['City Capture Rules','city-capture-rules',{fr:'Capture d’une ville — protocole'}],
+    ['Discord Rules','discord-rules',{fr:'Communication d’alliance'}],
+    ['Discord iTranslator','discord-itranslator',{fr:'Traduire un message'}],
+    ['Kingdom Titles & Favor','kingdom-titles-and-favor',{fr:'Titres du royaume & faveurs'}],
+    ['Royal Favor Buffs','royal-favor-buffs',{fr:'Bonus de faveur royale'}],
+    ['NAP 15 Relocation Guide','nap-15-relocation-guide',{fr:'Défense de la capitale — placement'}],
+    ['Target Identification Guide','target-identification-guide',{fr:'Identifier les cibles'}],
+    ['RSS Tile Etiquette','rss-tile-etiquette',{fr:'Respect des cases de ressources'}]
   ])
 };
 
