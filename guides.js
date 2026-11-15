@@ -26,12 +26,12 @@ export const guideLibrary={
     ['Bounty Tasks Guide','bounty-tasks-guide',{fr:'Guide des tâches de prime'}]
   ]),
   'heroes-squads':makeGuides('heroes-squads',[
-    ['Hero Faction Counter','hero-faction-counter'],
-    ['Squad & Hero Basics','squad-and-hero-basics'],
-    ['Hero Placement','hero-placement'],
-    ['Tribe Formation','tribe-formation'],
-    ['Wall of Honor','wall-of-honor'],
-    ['Hero Power Upgrade Bonuses','hero-power-upgrade-bonuses']
+    ['Hero Faction Counter','hero-faction-counter',{fr:'Contres des factions de héros'}],
+    ['Squad & Hero Basics','squad-and-hero-basics',{fr:'Bases des escouades et des héros'}],
+    ['Hero Placement','hero-placement',{fr:'Placement des héros'}],
+    ['Tribe Formation','tribe-formation',{fr:'Formation Tribu'}],
+    ['Wall of Honor','wall-of-honor',{fr:'Mur d’honneur'}],
+    ['Hero Power Upgrade Bonuses','hero-power-upgrade-bonuses',{fr:'Bonus de puissance des héros'}]
   ]),
   gear:makeGuides('gear',[
     ['Gear Basics','gear-basics',{fr:'Bases de l’équipement'}],
