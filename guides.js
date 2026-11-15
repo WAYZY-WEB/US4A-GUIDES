@@ -43,11 +43,11 @@ export const guideLibrary={
     ['Waterfall Training','waterfall-training',{fr:'Entraînement en cascade'}]
   ]),
   buildings:makeGuides('buildings',[
-    ['Base Building Guide','base-building-guide'],
-    ['Castle Upgrade Costs','castle-upgrade-costs'],
-    ['Barracks Upgrade Costs','barracks-upgrade-costs'],
-    ['Drill Ground Upgrade Costs','drill-ground-upgrade-costs'],
-    ['Scholar Tower I Upgrade Costs','scholar-tower-i-upgrade-costs']
+    ['Base Building Guide','base-building-guide',{fr:'Guide complet des bâtiments de base'}],
+    ['Castle Upgrade Costs','castle-upgrade-costs',{fr:'Coûts d’amélioration du château'}],
+    ['Barracks Upgrade Costs','barracks-upgrade-costs',{fr:'Coûts d’amélioration des casernes'}],
+    ['Drill Ground Upgrade Costs','drill-ground-upgrade-costs',{fr:'Coûts d’amélioration du terrain d’exercice'}],
+    ['Scholar Tower I Upgrade Costs','scholar-tower-i-upgrade-costs',{fr:'Coûts d’amélioration de la tour des érudits I'}]
   ]),
   'bosses-events':makeGuides('bosses-events',[
     ['Tusk Berserker (Mon–Thu)','tusk-berserker-mon-thu'],
