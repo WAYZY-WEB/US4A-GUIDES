@@ -10,15 +10,15 @@ const makeGuides=(category,items)=>items.map(([title,slug,localized={}])=>({
 
 export const guideLibrary={
   'alliance-duel':makeGuides('alliance-duel',[
-    ['Alliance Duel Overview','alliance-duel-overview',{fr:'Duel d’alliance — guide complet'}],
-    ['Daily Checklist','daily-checklist',{fr:'Liste quotidienne du Duel'}],
-    ['Day 0 — Sunday Setup','day-0-sunday-setup',{fr:'Jour 0 — préparation du dimanche'}],
-    ['Day 1','day-1',{fr:'Jour 1 — ressources de la ville'}],
-    ['Day 2','day-2',{fr:'Jour 2 — construction et activités'}],
-    ['Day 3','day-3',{fr:'Jour 3 — recherche et ressources'}],
-    ['Day 4 — Hero Day','day-4-hero-day',{fr:'Jour 4 — jour des héros'}],
-    ['Day 5','day-5',{fr:'Jour 5 — entraînement et primes'}],
-    ['Day 6','day-6',{fr:'Jour 6 — collecte et puissance'}]
+    ['Alliance Duel Overview','alliance-duel-overview',{fr:'Duel d’alliance — guide complet',en:'Alliance Duel — Complete Guide'}],
+    ['Daily Checklist','daily-checklist',{fr:'Liste quotidienne du Duel',en:'Alliance Duel — Daily Checklist'}],
+    ['Day 0 — Sunday Setup','day-0-sunday-setup',{fr:'Jour 0 — préparation du dimanche',en:'Day 0 — Sunday Setup'}],
+    ['Day 1','day-1',{fr:'Jour 1 — ressources de la ville',en:'Day 1 — City Resources'}],
+    ['Day 2','day-2',{fr:'Jour 2 — construction et activités',en:'Day 2 — Construction & Activities'}],
+    ['Day 3','day-3',{fr:'Jour 3 — recherche et ressources',en:'Day 3 — Research & Resources'}],
+    ['Day 4 — Hero Day','day-4-hero-day',{fr:'Jour 4 — jour des héros',en:'Day 4 — Hero Day'}],
+    ['Day 5','day-5',{fr:'Jour 5 — entraînement et primes',en:'Day 5 — Training & Bounties'}],
+    ['Day 6','day-6',{fr:'Jour 6 — collecte et puissance',en:'Day 6 — Gathering & Power'}]
   ]),
   routines:makeGuides('routines',[
     ['Every Day in an Alliance','every-day-in-an-alliance',{fr:'Chaque jour dans une alliance'}],
