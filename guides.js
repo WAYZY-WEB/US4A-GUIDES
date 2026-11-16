@@ -63,11 +63,11 @@ export const guideLibrary={
     ['Tusk Vanguard','tusk-vanguard',{fr:'Avant-garde Tusk',en:'Tusk Vanguard'}]
   ]),
   'combat-rallies':makeGuides('combat-rallies',[
-    ['Ambush Rally','ambush-rally',{fr:'Ralliement embuscade'}],
-    ['Surprise Rally','surprise-rally',{fr:'Ralliement surprise'}],
-    ['Surviving SvS','surviving-svs',{fr:'Survivre au SvS'}],
-    ['Arena Strategy','arena-strategy',{fr:'Stratégie d’arène'}],
-    ['Ambush Rally Ready Check','ambush-rally-ready-check',{fr:'Vérification « Prêt » — ralliement embuscade'}],
+    ['Ambush Rally','ambush-rally',{fr:'Ralliement embuscade',en:'Ambush Rally'}],
+    ['Surprise Rally','surprise-rally',{fr:'Ralliement surprise',en:'Surprise Rally'}],
+    ['Surviving SvS','surviving-svs',{fr:'Survivre au SvS',en:'Surviving SvS'}],
+    ['Arena Strategy','arena-strategy',{fr:'Stratégie d’arène',en:'Arena Strategy'}],
+    ['Ambush Rally Ready Check','ambush-rally-ready-check',{fr:'Vérification « Prêt » — ralliement embuscade',en:'Ambush Rally — Ready Check'}],
     ['Gold Mine Conquest','gold-mine-conquest',{fr:'Conquête de la mine d’or'}],
     ['Wall Defense Setup','wall-defense-setup',{fr:'Configuration de la défense du mur'}]
   ]),
