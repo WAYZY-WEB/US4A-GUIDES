@@ -50,17 +50,17 @@ export const guideLibrary={
     ['Scholar Tower I Upgrade Costs','scholar-tower-i-upgrade-costs',{fr:'Coûts d’amélioration de la tour des érudits I',en:'Scholar Tower I Upgrade Costs'}]
   ]),
   'bosses-events':makeGuides('bosses-events',[
-    ['Tusk Berserker (Mon–Thu)','tusk-berserker-mon-thu',{fr:'Tusk Berserker (lun.–jeu.)'}],
-    ['Tusk Boarlord (Tue–Fri)','tusk-boarlord-tue-fri',{fr:'Tusk Boarlord (mar.–ven.)'}],
-    ['Tusk Butcher (Wed–Sat)','tusk-butcher-wed-sat',{fr:'Tusk Butcher (mer.–sam.)'}],
-    ['Imperial Enforcer Hunt','imperial-enforcer-hunt',{fr:'Chasse aux Exécuteurs impériaux'}],
-    ['Imperial Pursuer Rally','imperial-pursuer-rally',{fr:'Traqueur impérial — guide de ralliement'}],
-    ['Vanguard Marshall','vanguard-marshall',{fr:'Maréchal de l’avant-garde'}],
-    ['Tusk Spoils Rush','tusk-spoils-rush',{fr:'Ruée vers le butin Tusk'}],
-    ['Caravan Trade','caravan-trade',{fr:'Commerce de caravanes'}],
-    ['Race to Ace','race-to-ace',{fr:'Race to Ace'}],
-    ['Boat Captain Guide','boat-captain-guide',{fr:'Guide du capitaine de bateau'}],
-    ['Tusk Vanguard','tusk-vanguard',{fr:'Avant-garde Tusk'}]
+    ['Tusk Berserker (Mon–Thu)','tusk-berserker-mon-thu',{fr:'Tusk Berserker (lun.–jeu.)',en:'Tusk Berserker (Mon–Thu)'}],
+    ['Tusk Boarlord (Tue–Fri)','tusk-boarlord-tue-fri',{fr:'Tusk Boarlord (mar.–ven.)',en:'Tusk Boarlord (Tue–Fri)'}],
+    ['Tusk Butcher (Wed–Sat)','tusk-butcher-wed-sat',{fr:'Tusk Butcher (mer.–sam.)',en:'Tusk Butcher (Wed–Sat)'}],
+    ['Imperial Enforcer Hunt','imperial-enforcer-hunt',{fr:'Chasse aux Exécuteurs impériaux',en:'Imperial Enforcer Hunt'}],
+    ['Imperial Pursuer Rally','imperial-pursuer-rally',{fr:'Traqueur impérial — guide de ralliement',en:'Imperial Pursuer — Rally Guide'}],
+    ['Vanguard Marshall','vanguard-marshall',{fr:'Maréchal de l’avant-garde',en:'Vanguard Marshall'}],
+    ['Tusk Spoils Rush','tusk-spoils-rush',{fr:'Ruée vers le butin Tusk',en:'Tusk Spoils Rush'}],
+    ['Caravan Trade','caravan-trade',{fr:'Commerce de caravanes',en:'Caravan Trade Guide'}],
+    ['Race to Ace','race-to-ace',{fr:'Race to Ace',en:'Race to Ace — Daily Guide'}],
+    ['Boat Captain Guide','boat-captain-guide',{fr:'Guide du capitaine de bateau',en:'Boat Captain Guide'}],
+    ['Tusk Vanguard','tusk-vanguard',{fr:'Avant-garde Tusk',en:'Tusk Vanguard'}]
   ]),
   'combat-rallies':makeGuides('combat-rallies',[
     ['Ambush Rally','ambush-rally',{fr:'Ralliement embuscade'}],
