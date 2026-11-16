@@ -70,19 +70,6 @@ export const guideLibrary={
     ['Ambush Rally Ready Check','ambush-rally-ready-check',{fr:'Vérification « Prêt » — ralliement embuscade',en:'Ambush Rally — Ready Check'}],
     ['Gold Mine Conquest','gold-mine-conquest',{fr:'Conquête de la mine d’or',en:'Gold Mine Conquest'}],
     ['Wall Defense Setup','wall-defense-setup',{fr:'Configuration de la défense du mur',en:'Wall Defense Setup'}]
-  ]),
-  'community-rules':makeGuides('community-rules',[
-    ['In-Server Attack Policy','in-server-attack-policy',{fr:'Attaques internes — bonnes pratiques'}],
-    ['Alliance Plundering Rulebook','alliance-plundering-rulebook',{fr:'Pillage sans toucher aux alliés'}],
-    ['Server-Wide Response','server-wide-response',{fr:'Incident interne — résolution'}],
-    ['City Capture Rules','city-capture-rules',{fr:'Capture d’une ville — protocole'}],
-    ['Discord Rules','discord-rules',{fr:'Communication d’alliance'}],
-    ['Discord iTranslator','discord-itranslator',{fr:'Traduire un message'}],
-    ['Kingdom Titles & Favor','kingdom-titles-and-favor',{fr:'Titres du royaume & faveurs'}],
-    ['Royal Favor Buffs','royal-favor-buffs',{fr:'Bonus de faveur royale'}],
-    ['NAP 15 Relocation Guide','nap-15-relocation-guide',{fr:'Défense de la capitale — placement'}],
-    ['Target Identification Guide','target-identification-guide',{fr:'Identifier les cibles'}],
-    ['RSS Tile Etiquette','rss-tile-etiquette',{fr:'Respect des cases de ressources'}]
   ])
 };
 
