@@ -34,20 +34,20 @@ export const guideLibrary={
     ['Hero Power Upgrade Bonuses','hero-power-upgrade-bonuses',{fr:'Bonus de puissance des héros',en:'Hero Power Bonuses'}]
   ]),
   gear:makeGuides('gear',[
-    ['Gear Basics','gear-basics',{fr:'Bases de l’équipement'}],
-    ['Gear Promotion','gear-promotion',{fr:'Promotion d’équipement'}],
-    ['Dragonslayer Gear','dragonslayer-gear',{fr:'Épée tueuse de dragons'}]
+    ['Gear Basics','gear-basics',{fr:'Bases de l’équipement',en:'Gear Basics'}],
+    ['Gear Promotion','gear-promotion',{fr:'Promotion d’équipement',en:'Gear Promotion'}],
+    ['Dragonslayer Gear','dragonslayer-gear',{fr:'Épée tueuse de dragons',en:'Dragonslayer Gear'}]
   ]),
   'troops-training':makeGuides('troops-training',[
-    ['Troop Soldier Levels','troop-soldier-levels',{fr:'Niveaux des soldats'}],
-    ['Waterfall Training','waterfall-training',{fr:'Entraînement en cascade'}]
+    ['Troop Soldier Levels','troop-soldier-levels',{fr:'Niveaux des soldats',en:'Soldier Level Guide'}],
+    ['Waterfall Training','waterfall-training',{fr:'Entraînement en cascade',en:'Waterfall Training'}]
   ]),
   buildings:makeGuides('buildings',[
-    ['Base Building Guide','base-building-guide',{fr:'Guide complet des bâtiments de base'}],
-    ['Castle Upgrade Costs','castle-upgrade-costs',{fr:'Coûts d’amélioration du château'}],
-    ['Barracks Upgrade Costs','barracks-upgrade-costs',{fr:'Coûts d’amélioration des casernes'}],
-    ['Drill Ground Upgrade Costs','drill-ground-upgrade-costs',{fr:'Coûts d’amélioration du terrain d’exercice'}],
-    ['Scholar Tower I Upgrade Costs','scholar-tower-i-upgrade-costs',{fr:'Coûts d’amélioration de la tour des érudits I'}]
+    ['Base Building Guide','base-building-guide',{fr:'Guide complet des bâtiments de base',en:'Base Building Guide'}],
+    ['Castle Upgrade Costs','castle-upgrade-costs',{fr:'Coûts d’amélioration du château',en:'Castle Upgrade Costs'}],
+    ['Barracks Upgrade Costs','barracks-upgrade-costs',{fr:'Coûts d’amélioration des casernes',en:'Barracks Upgrade Costs'}],
+    ['Drill Ground Upgrade Costs','drill-ground-upgrade-costs',{fr:'Coûts d’amélioration du terrain d’exercice',en:'Drill Ground Upgrade Costs'}],
+    ['Scholar Tower I Upgrade Costs','scholar-tower-i-upgrade-costs',{fr:'Coûts d’amélioration de la tour des érudits I',en:'Scholar Tower I Upgrade Costs'}]
   ]),
   'bosses-events':makeGuides('bosses-events',[
     ['Tusk Berserker (Mon–Thu)','tusk-berserker-mon-thu',{fr:'Tusk Berserker (lun.–jeu.)'}],
