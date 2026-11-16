@@ -68,8 +68,8 @@ export const guideLibrary={
     ['Surviving SvS','surviving-svs',{fr:'Survivre au SvS',en:'Surviving SvS'}],
     ['Arena Strategy','arena-strategy',{fr:'Stratégie d’arène',en:'Arena Strategy'}],
     ['Ambush Rally Ready Check','ambush-rally-ready-check',{fr:'Vérification « Prêt » — ralliement embuscade',en:'Ambush Rally — Ready Check'}],
-    ['Gold Mine Conquest','gold-mine-conquest',{fr:'Conquête de la mine d’or'}],
-    ['Wall Defense Setup','wall-defense-setup',{fr:'Configuration de la défense du mur'}]
+    ['Gold Mine Conquest','gold-mine-conquest',{fr:'Conquête de la mine d’or',en:'Gold Mine Conquest'}],
+    ['Wall Defense Setup','wall-defense-setup',{fr:'Configuration de la défense du mur',en:'Wall Defense Setup'}]
   ]),
   'community-rules':makeGuides('community-rules',[
     ['In-Server Attack Policy','in-server-attack-policy',{fr:'Attaques internes — bonnes pratiques'}],
