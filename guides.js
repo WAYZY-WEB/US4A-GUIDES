@@ -21,17 +21,17 @@ export const guideLibrary={
     ['Day 6','day-6',{fr:'Jour 6 — collecte et puissance',en:'Day 6 — Gathering & Power'}]
   ]),
   routines:makeGuides('routines',[
-    ['Every Day in an Alliance','every-day-in-an-alliance',{fr:'Chaque jour dans une alliance'}],
-    ['Weekly Alliance Tasks','weekly-alliance-tasks',{fr:'Tâches hebdomadaires de l’alliance'}],
-    ['Bounty Tasks Guide','bounty-tasks-guide',{fr:'Guide des tâches de prime'}]
+    ['Every Day in an Alliance','every-day-in-an-alliance',{fr:'Chaque jour dans une alliance',en:'Every Day in an Alliance'}],
+    ['Weekly Alliance Tasks','weekly-alliance-tasks',{fr:'Tâches hebdomadaires de l’alliance',en:'Weekly Alliance Tasks'}],
+    ['Bounty Tasks Guide','bounty-tasks-guide',{fr:'Guide des tâches de prime',en:'Bounty Tasks Guide'}]
   ]),
   'heroes-squads':makeGuides('heroes-squads',[
-    ['Hero Faction Counter','hero-faction-counter',{fr:'Contres des factions de héros'}],
-    ['Squad & Hero Basics','squad-and-hero-basics',{fr:'Bases des escouades et des héros'}],
-    ['Hero Placement','hero-placement',{fr:'Placement des héros'}],
-    ['Tribe Formation','tribe-formation',{fr:'Formation Tribu'}],
-    ['Wall of Honor','wall-of-honor',{fr:'Mur d’honneur'}],
-    ['Hero Power Upgrade Bonuses','hero-power-upgrade-bonuses',{fr:'Bonus de puissance des héros'}]
+    ['Hero Faction Counter','hero-faction-counter',{fr:'Contres des factions de héros',en:'Hero Faction Counters'}],
+    ['Squad & Hero Basics','squad-and-hero-basics',{fr:'Bases des escouades et des héros',en:'Squad & Hero Basics'}],
+    ['Hero Placement','hero-placement',{fr:'Placement des héros',en:'Hero Placement'}],
+    ['Tribe Formation','tribe-formation',{fr:'Formation Tribu',en:'Tribe Formation'}],
+    ['Wall of Honor','wall-of-honor',{fr:'Mur d’honneur',en:'Wall of Honor'}],
+    ['Hero Power Upgrade Bonuses','hero-power-upgrade-bonuses',{fr:'Bonus de puissance des héros',en:'Hero Power Bonuses'}]
   ]),
   gear:makeGuides('gear',[
     ['Gear Basics','gear-basics',{fr:'Bases de l’équipement'}],
