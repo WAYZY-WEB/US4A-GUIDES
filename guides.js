@@ -12,6 +12,7 @@ export const guideLibrary={
   'alliance-duel':makeGuides('alliance-duel',[
     ['Alliance Duel Overview','alliance-duel-overview',{fr:'Duel d’alliance — guide complet',en:'Alliance Duel — Complete Guide'}],
     ['Daily Checklist','daily-checklist',{fr:'Liste quotidienne du Duel',en:'Alliance Duel — Daily Checklist'}],
+    ['Storage Calendar','storage-calendar',{fr:'Planning de stockage du Duel',en:'Alliance Duel — Storage Calendar'}],
     ['Day 0 — Sunday Setup','day-0-sunday-setup',{fr:'Jour 0 — préparation du dimanche',en:'Day 0 — Sunday Setup'}],
     ['Day 1','day-1',{fr:'Jour 1 — ressources de la ville',en:'Day 1 — City Resources'}],
     ['Day 2','day-2',{fr:'Jour 2 — construction et activités',en:'Day 2 — Construction & Activities'}],
