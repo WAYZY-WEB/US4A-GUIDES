@@ -79,7 +79,7 @@ function App(){
     <header className="site-header">
       <div className="header">
         <button className="brand" onClick={()=>go('home')} aria-label={t.home}>
-          <img className="brand-avatar" src="/images/wayzy-avatar.jpg" alt="WAYZY" width="46" height="46"/>
+          <img className="brand-avatar" src="/images/logo-us4a-wayzy.png" alt="Emblème US4A WAYZY" width="46" height="46"/>
           <span>US4A <b>— GUIDES</b><small>{t.subtitle}</small></span>
         </button>
         <button className="hamburger" aria-label={t.menu} aria-expanded={mobile} aria-controls="main-navigation" onClick={()=>setMobile(open=>!open)}><Menu/></button>
