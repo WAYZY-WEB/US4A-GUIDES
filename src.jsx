@@ -71,7 +71,7 @@ function App(){
     <header className="site-header">
       <div className="header">
         <button className="brand" onClick={()=>go('home')} aria-label={t.home}>
-          <img className="brand-avatar" src="/images/logo-us4a-wayzy.png" alt="Emblème US4A WAYZY" width="46" height="46"/>
+          <img className="brand-avatar" src="/images/logo-us4a-guides.png" alt="Emblème US4A GUIDES" width="46" height="46"/>
           <span>US4A <b>— GUIDES</b><small>{t.subtitle}</small></span>
         </button>
         <button className="hamburger" aria-label={t.menu} aria-expanded={mobile} aria-controls="main-navigation" onClick={()=>setMobile(open=>!open)}><Menu/></button>
@@ -102,7 +102,7 @@ function App(){
         </section>
       </>:page==='guides'?<section className="guides-overview">
         <div className="guides-overview-header">
-          <div className="eyebrow">US4A — WAYZY</div>
+          <div className="eyebrow">US4A — GUIDES</div>
           <h1>{t.guides}</h1>
           <p>{totalGuides} {libraryText.guides}</p>
           <label className="search">
@@ -111,12 +111,12 @@ function App(){
           </label>
         </div>
         {matches.length?<div className="cards">{matches.map(([id,Icon,label,image])=><button className="card" key={id} onClick={()=>go(id)}><img src={image} alt="" width="720" height="720" loading="lazy"/><span className="card-overlay" aria-hidden="true"/><span className="card-copy"><Icon size={25}/><strong className="card-title">{label}</strong><span>{t.read} <b aria-hidden="true">→</b></span></span></button>)}</div>:<p className="no-results">{t.noResults}</p>}
-      </section>:page==='alliance'?<section className="inner"><Shield size={42}/><div className="eyebrow">US4A — WAYZY</div><h1>{t.alliance}</h1><p>{t.soon}</p><div className="locked"><Lock size={22}/>{t.soon}</div></section>:categoryPage?<section className="category-page">
+      </section>:page==='alliance'?<section className="inner"><Shield size={42}/><div className="eyebrow">US4A — GUIDES</div><h1>{t.alliance}</h1><p>{t.soon}</p><div className="locked"><Lock size={22}/>{t.soon}</div></section>:categoryPage?<section className="category-page">
         <button className="back-button" onClick={()=>go('guides')}><ArrowLeft size={18}/>{t.guides}</button>
         <div className="category-hero">
           <img src={categoryPage[3]} alt="" width="720" height="720"/>
           <span className="category-hero-shade" aria-hidden="true"/>
-          <div className="category-hero-copy"><div className="eyebrow">US4A — WAYZY</div><h1>{categoryPage[2]}</h1><p>{currentGuides.length} {currentGuides.length===1?libraryText.guide:libraryText.guides}</p></div>
+          <div className="category-hero-copy"><div className="eyebrow">US4A — GUIDES</div><h1>{categoryPage[2]}</h1><p>{currentGuides.length} {currentGuides.length===1?libraryText.guide:libraryText.guides}</p></div>
         </div>
         {page==='gear'?<section className="quick-notes"><div className="eyebrow">{libraryText.quickNotes}</div><div className="quick-notes-grid">{currentGearDetails.map(note=><article key={note.title}><h2>{note.title}</h2><ul>{note.bullets.map(bullet=><li key={bullet}>{bullet}</li>)}</ul></article>)}</div></section>:null}
         <div className="guide-list">{currentGuides.map((guide,index)=>{
@@ -142,7 +142,7 @@ function App(){
         <img src={selectedGuide.image} alt={selectedGuide.title} width="1024" height="1536"/>
       </div>
     </div>:null}
-    <footer><span>US4A — GUIDES · WAYZY</span><span>{t.notice}</span></footer>
+    <footer><span>US4A — GUIDES</span><span>{t.notice}</span></footer>
   </>;
 }
 
