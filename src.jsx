@@ -1,6 +1,6 @@
 import React,{useEffect,useState}from'react';
 import{createRoot}from'react-dom/client';
-import{ArrowLeft,BookOpen,Calculator,CalendarDays,Castle,Home,Languages,Lock,Menu,Search,Shield,Swords,Trophy,X,ZoomIn}from'lucide-react';
+import{ArrowLeft,BookOpen,CalendarDays,Castle,Home,Languages,Lock,Menu,Search,Shield,Swords,Trophy,X,ZoomIn}from'lucide-react';
 import{gearDetails,guideLibrary,libraryUi}from'./guides.js';
 import'./style.css';
 
@@ -24,14 +24,6 @@ function App(){
   const[mobile,setMobile]=useState(false);
   const[selectedGuide,setSelectedGuide]=useState(null);
   const t=strings[lang];
-  const sections=[
-    ['guides',BookOpen,t.guides],
-    ['heroes',Swords,t.heroes],
-    ['tools',Calculator,t.tools],
-    ['events',CalendarDays,t.events],
-    ['contest',Trophy,t.contest],
-    ['alliance',Shield,t.alliance]
-  ];
   const categories=[
     ['alliance-duel',Swords,t.allianceDuel,'/images/categories/alliance-duel.jpg'],
     ['routines',CalendarDays,t.routines,'/images/categories/daily-weekly-routines.jpg'],
@@ -42,9 +34,9 @@ function App(){
     ['bosses-events',Trophy,t.bossesEvents,'/images/categories/bosses-events.jpg'],
     ['combat-rallies',Swords,t.combatRallies,'/images/categories/combat-rallies.jpg']
   ];
-  const navigation=[['home',Home,t.home],...sections];
-  const pages=[...sections,...categories];
+  const navigation=[['home',Home,t.home],['guides',BookOpen,t.guides],['alliance',Shield,t.alliance]];
   const matches=categories.filter(([, ,label])=>label.toLocaleLowerCase(lang).includes(query.trim().toLocaleLowerCase(lang)));
+  const totalGuides=Object.values(guideLibrary).reduce((total,guides)=>total+guides.length,0);
 
   useEffect(()=>{
     document.documentElement.lang=lang;
@@ -66,14 +58,14 @@ function App(){
     setPage(nextPage);
     setMobile(false);
     setSelectedGuide(null);
+    window.scrollTo({top:0,left:0,behavior:'auto'});
   }
 
-  const current=pages.find(([id])=>id===page);
   const categoryPage=categories.find(([id])=>id===page);
   const currentGuides=guideLibrary[page]??[];
   const libraryText=libraryUi[lang]??libraryUi.en;
   const currentGearDetails=gearDetails[lang]??gearDetails.en;
-  const CurrentIcon=current?.[1]??BookOpen;
+  const CurrentIcon=categoryPage?.[1]??BookOpen;
 
   return <>
     <header className="site-header">
@@ -105,15 +97,22 @@ function App(){
             <div className="eyebrow">{t.hub}</div>
             <h1 id="hero-title">{t.welcome}</h1>
             <p>{t.intro}</p>
-            <label className="search">
-              <Search size={20}/><span className="sr-only">{t.search}</span>
-              <input type="search" placeholder={t.search} value={query} onChange={event=>setQuery(event.target.value)}/>
-            </label>
+            <button type="button" className="hero-cta" onClick={()=>go('guides')}><BookOpen size={20}/>{t.read} — {t.guides}</button>
           </div>
         </section>
+      </>:page==='guides'?<section className="guides-overview">
+        <div className="guides-overview-header">
+          <div className="eyebrow">US4A — WAYZY</div>
+          <h1>{t.guides}</h1>
+          <p>{totalGuides} {libraryText.guides}</p>
+          <label className="search">
+            <Search size={20}/><span className="sr-only">{t.search}</span>
+            <input type="search" placeholder={t.search} value={query} onChange={event=>setQuery(event.target.value)}/>
+          </label>
+        </div>
         {matches.length?<div className="cards">{matches.map(([id,Icon,label,image])=><button className="card" key={id} onClick={()=>go(id)}><img src={image} alt="" width="720" height="720" loading="lazy"/><span className="card-overlay" aria-hidden="true"/><span className="card-copy"><Icon size={25}/><strong className="card-title">{label}</strong><span>{t.read} <b aria-hidden="true">→</b></span></span></button>)}</div>:<p className="no-results">{t.noResults}</p>}
-      </>:page==='alliance'?<section className="inner"><Shield size={42}/><h1>{t.private}</h1><p>{t.privateDesc}</p><div className="locked"><Lock size={22}/>{t.soon}</div></section>:categoryPage?<section className="category-page">
-        <button className="back-button" onClick={()=>go('home')}><ArrowLeft size={18}/>{t.home}</button>
+      </section>:page==='alliance'?<section className="inner"><Shield size={42}/><div className="eyebrow">US4A — WAYZY</div><h1>{t.alliance}</h1><p>{t.soon}</p><div className="locked"><Lock size={22}/>{t.soon}</div></section>:categoryPage?<section className="category-page">
+        <button className="back-button" onClick={()=>go('guides')}><ArrowLeft size={18}/>{t.guides}</button>
         <div className="category-hero">
           <img src={categoryPage[3]} alt="" width="720" height="720"/>
           <span className="category-hero-shade" aria-hidden="true"/>
@@ -135,7 +134,7 @@ function App(){
             <div className="guide-item-copy"><span className="guide-number">{String(index+1).padStart(2,'0')}</span><div><h2>{title}</h2><p>{libraryText.guideSummary}</p></div></div>
           </article>;
         })}</div>
-      </section>:<section className="inner"><CurrentIcon size={42}/><div className="eyebrow">US4A — GUIDES</div><h1>{current?.[2]}</h1><p>{t.soon}</p><div className="placeholder"><CurrentIcon size={40}/><span>{t.soon}</span></div></section>}
+      </section>:<section className="inner"><CurrentIcon size={42}/><div className="eyebrow">US4A — GUIDES</div><h1>{t.guides}</h1><p>{t.soon}</p><div className="placeholder"><CurrentIcon size={40}/><span>{t.soon}</span></div></section>}
     </main>
     {selectedGuide?<div className="guide-modal" role="dialog" aria-modal="true" aria-label={selectedGuide.title} onClick={()=>setSelectedGuide(null)}>
       <div className="guide-modal-panel" onClick={event=>event.stopPropagation()}>
