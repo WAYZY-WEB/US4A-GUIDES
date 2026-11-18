@@ -16,6 +16,16 @@ const strings={
 };
 
 const languageNames={fr:'FR',en:'EN',es:'ES',de:'DE',ru:'RU',tr:'TR',ko:'KO',ar:'AR'};
+const guideActions={
+  fr:{view:'Voir le guide',close:'Fermer le guide'},
+  en:{view:'View guide',close:'Close guide'},
+  es:{view:'Ver la guía',close:'Cerrar la guía'},
+  de:{view:'Guide ansehen',close:'Guide schließen'},
+  ru:{view:'Открыть гайд',close:'Закрыть гайд'},
+  tr:{view:'Rehberi görüntüle',close:'Rehberi kapat'},
+  ko:{view:'가이드 보기',close:'가이드 닫기'},
+  ar:{view:'عرض الدليل',close:'إغلاق الدليل'}
+};
 
 function App(){
   const[lang,setLang]=useState('fr');
@@ -64,6 +74,7 @@ function App(){
   const categoryPage=categories.find(([id])=>id===page);
   const currentGuides=guideLibrary[page]??[];
   const libraryText=libraryUi[lang]??libraryUi.en;
+  const guideAction=guideActions[lang]??guideActions.en;
   const currentGearDetails=gearDetails[lang]??gearDetails.en;
   const CurrentIcon=categoryPage?.[1]??BookOpen;
 
@@ -123,10 +134,10 @@ function App(){
           const localized=guide.localized?.[lang];
           const image=localized?.image??guide.image;
           const title=localized?.title??guide.title;
-          return localized?<button type="button" className="guide-item guide-item-localized" key={guide.slug} onClick={()=>setSelectedGuide({image,title})} aria-label={`${t.viewGuide}: ${title}`}>
+          return localized?<button type="button" className="guide-item guide-item-localized" key={guide.slug} onClick={()=>setSelectedGuide({image,title})} aria-label={`${guideAction.view}: ${title}`}>
             <img src={image} alt="" width="1024" height="1536" loading="lazy"/>
             <span className="guide-item-shade" aria-hidden="true"/>
-            <span className="guide-preview-badge"><ZoomIn size={16}/>{t.viewGuide}</span>
+            <span className="guide-preview-badge"><ZoomIn size={16}/>{guideAction.view}</span>
             <span className="guide-item-copy"><span className="guide-number">{String(index+1).padStart(2,'0')}</span><span><h2>{title}</h2><p>{libraryText.guideSummary}</p></span></span>
           </button>:<article className="guide-item" key={guide.slug}>
             <img src={image} alt="" width="720" height="720" loading="lazy"/>
@@ -138,7 +149,7 @@ function App(){
     </main>
     {selectedGuide?<div className="guide-modal" role="dialog" aria-modal="true" aria-label={selectedGuide.title} onClick={()=>setSelectedGuide(null)}>
       <div className="guide-modal-panel" onClick={event=>event.stopPropagation()}>
-        <button type="button" className="guide-modal-close" onClick={()=>setSelectedGuide(null)}><X size={20}/>{t.closeGuide}</button>
+        <button type="button" className="guide-modal-close" onClick={()=>setSelectedGuide(null)}><X size={20}/>{guideAction.close}</button>
         <img src={selectedGuide.image} alt={selectedGuide.title} width="1024" height="1536"/>
       </div>
     </div>:null}
