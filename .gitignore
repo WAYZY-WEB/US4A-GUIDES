@@ -3,4 +3,6 @@ node_modules/
 dist/
 public/images/categories/*.png
 public/images/wayzy-avatar.png
+.visual-audit/
+.contest-private/
 

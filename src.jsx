@@ -1,7 +1,8 @@
 import React,{useEffect,useState}from'react';
 import{createRoot}from'react-dom/client';
-import{ArrowLeft,BookOpen,CalendarDays,Castle,Home,Languages,Lock,Menu,Search,Shield,Swords,Trophy,X,ZoomIn}from'lucide-react';
+import{ArrowLeft,BookOpen,CalendarDays,Castle,Home,Languages,Menu,Search,Shield,Swords,Trophy,X,ZoomIn}from'lucide-react';
 import{gearDetails,guideLibrary,libraryUi}from'./guides.js';
+import AllianceContest from'./allianceContest.jsx';
 import'./style.css';
 
 const strings={
@@ -27,9 +28,15 @@ const guideActions={
   ar:{view:'عرض الدليل',close:'إغلاق الدليل'}
 };
 
+const validPages=new Set(['home','guides','alliance','alliance-duel','routines','heroes-squads','gear','troops-training','buildings','bosses-events','combat-rallies']);
+const initialPage=()=>{
+  const requested=new URLSearchParams(window.location.search).get('page');
+  return validPages.has(requested)?requested:'home';
+};
+
 function App(){
   const[lang,setLang]=useState('fr');
-  const[page,setPage]=useState('home');
+  const[page,setPage]=useState(initialPage);
   const[query,setQuery]=useState('');
   const[mobile,setMobile]=useState(false);
   const[selectedGuide,setSelectedGuide]=useState(null);
@@ -68,6 +75,9 @@ function App(){
     setPage(nextPage);
     setMobile(false);
     setSelectedGuide(null);
+    const url=new URL(window.location.href);
+    if(nextPage==='home')url.searchParams.delete('page');else url.searchParams.set('page',nextPage);
+    window.history.replaceState({},'',url);
     window.scrollTo({top:0,left:0,behavior:'auto'});
   }
 
@@ -122,7 +132,7 @@ function App(){
           </label>
         </div>
         {matches.length?<div className="cards">{matches.map(([id,Icon,label,image])=><button className="card" key={id} onClick={()=>go(id)}><img src={image} alt="" width="720" height="720" loading="lazy"/><span className="card-overlay" aria-hidden="true"/><span className="card-copy"><Icon size={25}/><strong className="card-title">{label}</strong><span>{t.read} <b aria-hidden="true">→</b></span></span></button>)}</div>:<p className="no-results">{t.noResults}</p>}
-      </section>:page==='alliance'?<section className="inner"><Shield size={42}/><div className="eyebrow">US4A — GUIDES</div><h1>{t.alliance}</h1><p>{t.soon}</p><div className="locked"><Lock size={22}/>{t.soon}</div></section>:categoryPage?<section className="category-page">
+      </section>:page==='alliance'?<AllianceContest onOpenGuides={()=>go('alliance-duel')}/>:categoryPage?<section className="category-page">
         <button className="back-button" onClick={()=>go('guides')}><ArrowLeft size={18}/>{t.guides}</button>
         <div className="category-hero">
           <img src={categoryPage[3]} alt="" width="720" height="720"/>
