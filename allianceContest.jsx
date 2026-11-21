@@ -76,7 +76,7 @@ function Overview({state,onView,onOpenGuides,t}){
     </section>
 
     <div className="contest-info-grid">
-      <article><CalendarDays/><h3>{t.calendar}</h3><p>{t.depositDeadline}</p><p>{t.votePeriod}</p></article>
+      <article><CalendarDays/><h3>{t.calendar}</h3><p>{t.depositDeadline}</p><p>{t.votePeriod}</p><p><strong>{t.serverTimeNote}</strong></p></article>
       <article><Images/><h3>{t.participation}</h3><p>{t.participationDescription}</p></article>
       <article><Vote/><h3>{t.fairVote}</h3><p>{t.fairVoteDescription}</p></article>
     </div>
