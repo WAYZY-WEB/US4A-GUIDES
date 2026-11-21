@@ -1,29 +1,19 @@
 import React,{useEffect,useMemo,useState}from'react';
 import{Award,BookOpen,CalendarDays,CheckCircle2,Download,Eye,FileImage,Images,KeyRound,LockKeyhole,Shield,Trash2,Trophy,Upload,Users,Vote}from'lucide-react';
 import'./allianceContest.css';
+import{contestText,interpolate}from'./allianceContestTranslations.js';
 
 const API='/api/contest';
 const MAX_FILES=5;
 const MAX_BYTES=3*1024*1024;
 
-const phaseCopy={
-  setup:'Activation technique en cours',
-  submissions:'Participations ouvertes',
-  preparing:'Préparation des créations',
-  voting:'Vote ouvert',
-  runoff_pending:'Second tour à venir',
-  runoff:'Second tour ouvert',
-  closed:'Vote terminé',
-  results:'Résultats publiés'
-};
-
-function formatDate(value){
-  if(!value)return'—';
-  return new Intl.DateTimeFormat('fr-FR',{dateStyle:'long',timeStyle:'short',timeZone:'Europe/Paris'}).format(new Date(value));
+function fileSize(bytes,t){
+  return bytes>=1024*1024?`${(bytes/1024/1024).toFixed(1)} ${t.sizeMb}`:`${Math.ceil(bytes/1024)} ${t.sizeKb}`;
 }
 
-function fileSize(bytes){
-  return bytes>=1024*1024?`${(bytes/1024/1024).toFixed(1)} Mo`:`${Math.ceil(bytes/1024)} Ko`;
+function localizedError(reason,t){
+  const code=reason?.code==='expired_session'?'invalid_session':reason?.code;
+  return t.errors?.[code]??reason?.message??t.errors.generic;
 }
 
 async function api(path,{method='GET',body,token,form}={}){
@@ -41,8 +31,8 @@ async function api(path,{method='GET',body,token,form}={}){
   return data;
 }
 
-async function compressImage(file){
-  if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error(`${file.name} n’est pas une image acceptée.`);
+async function compressImage(file,t){
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error(interpolate(t.invalidLocalImage,{name:file.name}));
   if(file.size<=MAX_BYTES)return file;
   const bitmap=await createImageBitmap(file);
   const maximum=2560;
@@ -61,7 +51,7 @@ async function compressImage(file){
     blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
     quality-=.08;
   }while(blob&&blob.size>MAX_BYTES&&quality>=.5);
-  if(!blob||blob.size>MAX_BYTES)throw new Error(`${file.name} reste trop volumineuse après compression.`);
+  if(!blob||blob.size>MAX_BYTES)throw new Error(interpolate(t.compressionFailed,{name:file.name}));
   return new File([blob],file.name.replace(/\.[^.]+$/,'.jpg'),{type:'image/jpeg'});
 }
 
@@ -69,59 +59,59 @@ function Notice({kind='info',children}){
   return <div className={`contest-notice ${kind}`}>{children}</div>;
 }
 
-function Overview({state,onView,onOpenGuides}){
+function Overview({state,onView,onOpenGuides,t}){
   const results=state?.results;
   return <div className="contest-overview">
     <section className="contest-announcement">
       <div>
-        <div className="contest-kicker">CONCOURS EXCLUSIF AUX MEMBRES US4A</div>
-        <h2>Le plus beau château</h2>
-        <p>Disposez vos bâtiments, statues et décorations pour créer un château unique. Partagez jusqu’à cinq captures afin de montrer l’ensemble de votre création.</p>
+        <div className="contest-kicker">{t.exclusive}</div>
+        <h2>{t.contestTitle}</h2>
+        <p>{t.contestDescription}</p>
         <div className="contest-actions">
-          <button className="contest-primary" onClick={()=>onView('submit')}><Upload size={18}/>Participer</button>
-          <button className="contest-secondary" onClick={()=>onView('vote')}><Vote size={18}/>Accéder au vote</button>
+          <button className="contest-primary" onClick={()=>onView('submit')}><Upload size={18}/>{t.participate}</button>
+          <button className="contest-secondary" onClick={()=>onView('vote')}><Vote size={18}/>{t.openVote}</button>
         </div>
       </div>
       <div className="contest-visual" aria-hidden="true"><img src="/images/alliance/castle-contest-announcement.png" alt=""/></div>
     </section>
 
     <div className="contest-info-grid">
-      <article><CalendarDays/><h3>Calendrier</h3><p>Dépôt jusqu’au <strong>27 novembre à 23 h 59</strong>.</p><p>Vote du <strong>28 novembre à 10 h</strong> au <strong>29 novembre à 18 h</strong>.</p></article>
-      <article><Images/><h3>Participation</h3><p>De 1 à 5 captures par joueur, modifiables jusqu’à la clôture. Les images restent privées avant le vote.</p></article>
-      <article><Vote/><h3>Vote équitable</h3><p>Chaque membre classe trois créations : 3, 2 et 1 point. Aucun participant ne peut voter pour son propre château.</p></article>
+      <article><CalendarDays/><h3>{t.calendar}</h3><p>{t.depositDeadline}</p><p>{t.votePeriod}</p></article>
+      <article><Images/><h3>{t.participation}</h3><p>{t.participationDescription}</p></article>
+      <article><Vote/><h3>{t.fairVote}</h3><p>{t.fairVoteDescription}</p></article>
     </div>
 
     <section className="contest-prizes">
-      <div><Trophy/><span>1re place</span><strong>30 coffres de ville</strong></div>
-      <div><Award/><span>2e place</span><strong>20 coffres de ville</strong></div>
-      <div><Award/><span>3e place</span><strong>10 coffres de ville</strong></div>
+      <div><Trophy/><span>{t.firstPlace}</span><strong>{t.firstPrize}</strong></div>
+      <div><Award/><span>{t.secondPlace}</span><strong>{t.secondPrize}</strong></div>
+      <div><Award/><span>{t.thirdPlace}</span><strong>{t.thirdPrize}</strong></div>
     </section>
 
     <section className="contest-steps">
-      <h2>Comment participer ?</h2>
+      <h2>{t.howTo}</h2>
       <ol>
-        <li><span>1</span><div><strong>Préparez votre château</strong><p>Créez une décoration originale, harmonieuse et créative.</p></div></li>
-        <li><span>2</span><div><strong>Déposez vos captures</strong><p>Saisissez votre nom exact et le code Alliance, puis envoyez jusqu’à cinq images.</p></div></li>
-        <li><span>3</span><div><strong>Conservez votre code personnel</strong><p>Il permet de remplacer vos images jusqu’au 27 novembre à 23 h 59.</p></div></li>
-        <li><span>4</span><div><strong>Votez pour vos favoris</strong><p>Votre code de vote individuel garantit un seul bulletin par membre.</p></div></li>
+        <li><span>1</span><div><strong>{t.step1Title}</strong><p>{t.step1Body}</p></div></li>
+        <li><span>2</span><div><strong>{t.step2Title}</strong><p>{t.step2Body}</p></div></li>
+        <li><span>3</span><div><strong>{t.step3Title}</strong><p>{t.step3Body}</p></div></li>
+        <li><span>4</span><div><strong>{t.step4Title}</strong><p>{t.step4Body}</p></div></li>
       </ol>
     </section>
 
-    {results?<Results results={results}/>:null}
+    {results?<Results results={results} t={t}/>:null}
 
-    <button className="contest-guide-link" onClick={onOpenGuides}><BookOpen size={22}/><span><strong>Besoin de préparer vos ressources ?</strong><small>Retrouvez les guides du Duel d’alliance.</small></span></button>
+    <button className="contest-guide-link" onClick={onOpenGuides}><BookOpen size={22}/><span><strong>{t.guideTitle}</strong><small>{t.guideBody}</small></span></button>
   </div>;
 }
 
-function Results({results}){
+function Results({results,t}){
   const podium=[['1',results.podium?.first],['2',results.podium?.second],['3',results.podium?.third]];
   return <section className="contest-results-public">
-    <div className="contest-kicker">RÉSULTATS OFFICIELS</div><h2>Le podium US4A</h2>
-    <div className="contest-podium">{podium.map(([place,entry])=>entry?<article key={place} className={`place-${place}`}><span>{place}</span><img src={entry.imageUrl} alt={`Création de ${entry.memberName}`}/><h3>{entry.memberName}</h3><p>{entry.label}</p></article>:null)}</div>
+    <div className="contest-kicker">{t.officialResults}</div><h2>{t.podiumTitle}</h2>
+    <div className="contest-podium">{podium.map(([place,entry])=>entry?<article key={place} className={`place-${place}`}><span>{place}</span><img src={entry.imageUrl} alt={interpolate(t.creationAlt,{name:entry.memberName})}/><h3>{entry.memberName}</h3><p>{entry.label}</p></article>:null)}</div>
   </section>;
 }
 
-function SubmissionPanel(){
+function SubmissionPanel({t}){
   const[token,setToken]=useState(()=>localStorage.getItem('us4a-contest-submission-token')??'');
   const[submission,setSubmission]=useState(null);
   const[mode,setMode]=useState('new');
@@ -139,7 +129,7 @@ function SubmissionPanel(){
       const data=await api('/submission',{token:activeToken});
       setSubmission(data.submission);setError('');
     }catch(reason){
-      setError(reason.message);
+      setError(localizedError(reason,t));
       if(['invalid_session','expired_session','unauthorized'].includes(reason.code)){localStorage.removeItem('us4a-contest-submission-token');setToken('');}
     }
   }
@@ -154,57 +144,57 @@ function SubmissionPanel(){
       localStorage.setItem('us4a-contest-submission-token',data.token);setToken(data.token);
       if(data.editCode)setNewCode(data.editCode);
       await load(data.token);
-    }catch(reason){setError(reason.message)}finally{setBusy(false)}
+    }catch(reason){setError(localizedError(reason,t))}finally{setBusy(false)}
   }
 
   async function uploadFiles(event){
     const files=[...event.target.files];event.target.value='';
     if(!files.length)return;
-    if((submission?.images.length??0)+files.length>MAX_FILES){setError('Le total ne peut pas dépasser cinq images.');return}
-    setBusy(true);setError('');setMessage('Compression et envoi en cours…');
+    if((submission?.images.length??0)+files.length>MAX_FILES){setError(t.maxFive);return}
+    setBusy(true);setError('');setMessage(t.compressing);
     try{
       for(const original of files){
-        const file=await compressImage(original);
+        const file=await compressImage(original,t);
         const form=new FormData();form.append('file',file);
         await api('/submission/image',{method:'POST',token,form});
       }
-      setMessage(`${files.length} image${files.length>1?'s':''} enregistrée${files.length>1?'s':''}.`);await load();
-    }catch(reason){setError(reason.message);setMessage('')}finally{setBusy(false)}
+      setMessage(interpolate(t.filesSaved,{count:files.length}));await load();
+    }catch(reason){setError(localizedError(reason,t));setMessage('')}finally{setBusy(false)}
   }
 
   async function removeImage(id){
-    if(!confirm('Retirer cette image de votre participation ?'))return;
+    if(!confirm(t.removeImageConfirm))return;
     setBusy(true);setError('');
-    try{await api(`/submission/image/${encodeURIComponent(id)}`,{method:'DELETE',token});await load()}catch(reason){setError(reason.message)}finally{setBusy(false)}
+    try{await api(`/submission/image/${encodeURIComponent(id)}`,{method:'DELETE',token});await load()}catch(reason){setError(localizedError(reason,t))}finally{setBusy(false)}
   }
 
   function disconnect(){localStorage.removeItem('us4a-contest-submission-token');setToken('');setSubmission(null);setNewCode('');setMessage('')}
 
   if(!token||!submission)return <section className="contest-panel contest-auth-panel">
-    <div className="contest-panel-heading"><Upload/><div><div className="contest-kicker">PARTICIPATION</div><h2>Déposer mes captures</h2></div></div>
-    <div className="contest-mode-switch"><button className={mode==='new'?'active':''} onClick={()=>setMode('new')}>Nouvelle participation</button><button className={mode==='returning'?'active':''} onClick={()=>setMode('returning')}>Modifier mes images</button></div>
+    <div className="contest-panel-heading"><Upload/><div><div className="contest-kicker">{t.submissionKicker}</div><h2>{t.depositTitle}</h2></div></div>
+    <div className="contest-mode-switch"><button className={mode==='new'?'active':''} onClick={()=>setMode('new')}>{t.newEntry}</button><button className={mode==='returning'?'active':''} onClick={()=>setMode('returning')}>{t.editImages}</button></div>
     <form onSubmit={authenticate} className="contest-form">
-      <label>Nom exact dans le jeu<input required value={name} onChange={event=>setName(event.target.value)} autoComplete="nickname"/></label>
-      {mode==='new'?<label>Code de l’alliance<input required type="password" value={accessCode} onChange={event=>setAccessCode(event.target.value)} autoComplete="one-time-code"/></label>:<label>Code personnel de modification<input required value={editCode} onChange={event=>setEditCode(event.target.value.toUpperCase())} placeholder="XXXX-XXXX-XXXX" autoComplete="one-time-code"/></label>}
+      <label>{t.exactName}<input required value={name} onChange={event=>setName(event.target.value)} autoComplete="nickname"/></label>
+      {mode==='new'?<label>{t.allianceCode}<input required type="password" value={accessCode} onChange={event=>setAccessCode(event.target.value)} autoComplete="one-time-code"/></label>:<label>{t.editCode}<input required dir="ltr" value={editCode} onChange={event=>setEditCode(event.target.value.toUpperCase())} placeholder="XXXX-XXXX-XXXX" autoComplete="one-time-code"/></label>}
       {error?<Notice kind="error">{error}</Notice>:null}
-      <button className="contest-primary" disabled={busy}>{busy?'Vérification…':mode==='new'?'Commencer mon dépôt':'Retrouver ma participation'}</button>
+      <button className="contest-primary" disabled={busy}>{busy?t.verifying:mode==='new'?t.startDeposit:t.findEntry}</button>
     </form>
   </section>;
 
   return <section className="contest-panel">
-    <div className="contest-panel-heading"><Images/><div><div className="contest-kicker">PARTICIPATION DE {submission.memberName}</div><h2>Mes captures du château</h2></div><button className="contest-text-button" onClick={disconnect}>Quitter</button></div>
-    {newCode?<Notice kind="success"><div className="contest-code-notice"><strong>Conservez ce code personnel : <code>{newCode}</code></strong><span>Il ne sera affiché qu’une fois et permet de modifier vos images jusqu’à la date limite.</span></div></Notice>:null}
-    <p>Ajoutez de 1 à 5 images. Elles restent privées et ne sont visibles que par l’organisateur.</p>
+    <div className="contest-panel-heading"><Images/><div><div className="contest-kicker">{interpolate(t.participationOf,{name:submission.memberName})}</div><h2>{t.myCaptures}</h2></div><button className="contest-text-button" onClick={disconnect}>{t.quit}</button></div>
+    {newCode?<Notice kind="success"><div className="contest-code-notice"><strong>{interpolate(t.keepCode,{code:''})}<code dir="ltr">{newCode}</code></strong><span>{t.codeOnce}</span></div></Notice>:null}
+    <p>{t.addIntro}</p>
     <div className="submission-images">
-      {submission.images.map((image,index)=><article key={image.id}><img src={image.url} alt={`Capture ${index+1}`}/><div><span>Capture {index+1}</span><small>{fileSize(image.size_bytes)}</small></div>{!submission.locked?<button aria-label="Retirer cette image" onClick={()=>removeImage(image.id)}><Trash2 size={17}/></button>:null}</article>)}
-      {!submission.locked&&submission.images.length<MAX_FILES?<label className="submission-add"><Upload/><strong>Ajouter des images</strong><span>{MAX_FILES-submission.images.length} emplacement{MAX_FILES-submission.images.length>1?'s':''} disponible{MAX_FILES-submission.images.length>1?'s':''}</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={uploadFiles} disabled={busy}/></label>:null}
+      {submission.images.map((image,index)=><article key={image.id}><img src={image.url} alt={interpolate(t.capture,{number:index+1})}/><div><span>{interpolate(t.capture,{number:index+1})}</span><small>{fileSize(image.size_bytes,t)}</small></div>{!submission.locked?<button aria-label={t.removeImageAria} onClick={()=>removeImage(image.id)}><Trash2 size={17}/></button>:null}</article>)}
+      {!submission.locked&&submission.images.length<MAX_FILES?<label className="submission-add"><Upload/><strong>{t.addImages}</strong><span>{interpolate(t.slotsAvailable,{count:MAX_FILES-submission.images.length})}</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={uploadFiles} disabled={busy}/></label>:null}
     </div>
     {message?<Notice kind="success">{message}</Notice>:null}{error?<Notice kind="error">{error}</Notice>:null}
-    {submission.images.length?<Notice><CheckCircle2 size={18}/>Votre participation est enregistrée. Vous pouvez revenir la modifier avant la clôture.</Notice>:null}
+    {submission.images.length?<Notice><CheckCircle2 size={18}/>{t.entrySaved}</Notice>:null}
   </section>;
 }
 
-function VotePanel(){
+function VotePanel({t}){
   const[token,setToken]=useState(()=>sessionStorage.getItem('us4a-contest-voter-token')??'');
   const[name,setName]=useState('');
   const[code,setCode]=useState('');
@@ -218,31 +208,31 @@ function VotePanel(){
     if(!activeToken)return;
     try{
       const data=await api('/vote/gallery',{token:activeToken});setGallery(data);setPicks(data.ballot??{first:'',second:'',third:''});setError('');
-    }catch(reason){setError(reason.message);if(['invalid_session','expired_session','unauthorized'].includes(reason.code)){sessionStorage.removeItem('us4a-contest-voter-token');setToken('')}}
+    }catch(reason){setError(localizedError(reason,t));if(['invalid_session','expired_session','unauthorized'].includes(reason.code)){sessionStorage.removeItem('us4a-contest-voter-token');setToken('')}}
   }
   useEffect(()=>{load()},[]);
 
   async function login(event){
     event.preventDefault();setBusy(true);setError('');
-    try{const data=await api('/vote/login',{method:'POST',body:{name,code}});sessionStorage.setItem('us4a-contest-voter-token',data.token);setToken(data.token);await load(data.token)}catch(reason){setError(reason.message)}finally{setBusy(false)}
+    try{const data=await api('/vote/login',{method:'POST',body:{name,code}});sessionStorage.setItem('us4a-contest-voter-token',data.token);setToken(data.token);await load(data.token)}catch(reason){setError(localizedError(reason,t))}finally{setBusy(false)}
   }
 
   async function saveVote(event){
     event.preventDefault();setBusy(true);setError('');setMessage('');
-    try{await api('/vote',{method:'POST',token,body:picks});setMessage('Votre bulletin est enregistré. Vous pouvez le modifier jusqu’à la fermeture du vote.');await load()}catch(reason){setError(reason.message)}finally{setBusy(false)}
+    try{await api('/vote',{method:'POST',token,body:picks});setMessage(t.voteSaved);await load()}catch(reason){setError(localizedError(reason,t))}finally{setBusy(false)}
   }
 
-  if(!token||!gallery)return <section className="contest-panel contest-auth-panel"><div className="contest-panel-heading"><Vote/><div><div className="contest-kicker">VOTE DES MEMBRES</div><h2>Accéder au bulletin</h2></div></div><p>Utilisez le code personnel transmis par l’organisateur. Chaque membre ne dispose que d’un seul bulletin.</p><form className="contest-form" onSubmit={login}><label>Nom exact dans le jeu<input required value={name} onChange={event=>setName(event.target.value)}/></label><label>Code personnel de vote<input required value={code} onChange={event=>setCode(event.target.value.toUpperCase())} placeholder="XXXXX-XXXXX"/></label>{error?<Notice kind="error">{error}</Notice>:null}<button className="contest-primary" disabled={busy}>{busy?'Vérification…':'Ouvrir mon bulletin'}</button></form></section>;
+  if(!token||!gallery)return <section className="contest-panel contest-auth-panel"><div className="contest-panel-heading"><Vote/><div><div className="contest-kicker">{t.memberVote}</div><h2>{t.accessBallot}</h2></div></div><p>{t.voteAccessDesc}</p><form className="contest-form" onSubmit={login}><label>{t.exactName}<input required value={name} onChange={event=>setName(event.target.value)}/></label><label>{t.personalVoteCode}<input required dir="ltr" value={code} onChange={event=>setCode(event.target.value.toUpperCase())} placeholder="XXXXX-XXXXX"/></label>{error?<Notice kind="error">{error}</Notice>:null}<button className="contest-primary" disabled={busy}>{busy?t.verifying:t.openBallot}</button></form></section>;
 
   const selectable=gallery.entries.filter(entry=>entry.canVote);
   const isRunoff=gallery.round===2;
-  return <section className="contest-panel"><div className="contest-panel-heading"><Vote/><div><div className="contest-kicker">{isRunoff?'SECOND TOUR':'VOTE PRINCIPAL'}</div><h2>{isRunoff?'Départagez les créations ex æquo':'Classez vos trois créations préférées'}</h2></div></div>
-    <div className="vote-gallery">{gallery.entries.map(entry=><article key={entry.id} className={!entry.canVote?'own-entry':''}><img src={entry.imageUrl} alt={entry.label}/><h3>{entry.label}</h3>{!entry.canVote?<span>Votre création — vote impossible</span>:null}</article>)}</div>
+  return <section className="contest-panel"><div className="contest-panel-heading"><Vote/><div><div className="contest-kicker">{isRunoff?t.runoffRound:t.mainRound}</div><h2>{isRunoff?t.runoffTitle:t.rankTitle}</h2></div></div>
+    <div className="vote-gallery">{gallery.entries.map(entry=><article key={entry.id} className={!entry.canVote?'own-entry':''}><img src={entry.imageUrl} alt={entry.label}/><h3>{entry.label}</h3>{!entry.canVote?<span>{t.ownEntry}</span>:null}</article>)}</div>
     {selectable.length?(<form className="contest-ballot" onSubmit={saveVote}>
-      <label><strong>{isRunoff?'Votre choix':'1er choix — 3 points'}</strong><select required value={picks.first} onChange={event=>setPicks({...picks,first:event.target.value})}><option value="">Sélectionner…</option>{selectable.map(entry=><option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
-      {!isRunoff?<><label><strong>2e choix — 2 points</strong><select required value={picks.second} onChange={event=>setPicks({...picks,second:event.target.value})}><option value="">Sélectionner…</option>{selectable.map(entry=><option key={entry.id} value={entry.id} disabled={entry.id===picks.first}>{entry.label}</option>)}</select></label><label><strong>3e choix — 1 point</strong><select required value={picks.third} onChange={event=>setPicks({...picks,third:event.target.value})}><option value="">Sélectionner…</option>{selectable.map(entry=><option key={entry.id} value={entry.id} disabled={[picks.first,picks.second].includes(entry.id)}>{entry.label}</option>)}</select></label></>:null}
-      {message?<Notice kind="success">{message}</Notice>:null}{error?<Notice kind="error">{error}</Notice>:null}<button className="contest-primary" disabled={busy}>{busy?'Enregistrement…':'Enregistrer mon vote'}</button>
-    </form>):<Notice>Le bulletin n’est pas encore disponible.</Notice>}
+      <label><strong>{isRunoff?t.yourChoice:t.firstChoice}</strong><select required value={picks.first} onChange={event=>setPicks({...picks,first:event.target.value})}><option value="">{t.select}</option>{selectable.map(entry=><option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
+      {!isRunoff?<><label><strong>{t.secondChoice}</strong><select required value={picks.second} onChange={event=>setPicks({...picks,second:event.target.value})}><option value="">{t.select}</option>{selectable.map(entry=><option key={entry.id} value={entry.id} disabled={entry.id===picks.first}>{entry.label}</option>)}</select></label><label><strong>{t.thirdChoice}</strong><select required value={picks.third} onChange={event=>setPicks({...picks,third:event.target.value})}><option value="">{t.select}</option>{selectable.map(entry=><option key={entry.id} value={entry.id} disabled={[picks.first,picks.second].includes(entry.id)}>{entry.label}</option>)}</select></label></>:null}
+      {message?<Notice kind="success">{message}</Notice>:null}{error?<Notice kind="error">{error}</Notice>:null}<button className="contest-primary" disabled={busy}>{busy?t.saving:t.saveVote}</button>
+    </form>):<Notice>{t.ballotUnavailable}</Notice>}
   </section>;
 }
 
@@ -310,12 +300,12 @@ function AdminPanel(){
     try{await api('/admin/podium',{method:'POST',token,body:podium});setMessage('Le podium est maintenant public.');await load()}catch(reason){setError(reason.message)}finally{setBusy(false)}
   }
 
-  if(!token||!data)return <section className="contest-panel contest-auth-panel"><div className="contest-panel-heading"><LockKeyhole/><div><div className="contest-kicker">ESPACE ORGANISATEUR</div><h2>Administration privée</h2></div></div><form className="contest-form" onSubmit={login}><label>Mot de passe administrateur<input required type="password" value={password} onChange={event=>setPassword(event.target.value)} autoComplete="current-password"/></label>{error?<Notice kind="error">{error}</Notice>:null}<button className="contest-primary" disabled={busy}>{busy?'Connexion…':'Se connecter'}</button></form></section>;
+  if(!token||!data)return <section className="contest-panel contest-auth-panel" dir="ltr"><div className="contest-panel-heading"><LockKeyhole/><div><div className="contest-kicker">ESPACE ORGANISATEUR</div><h2>Administration privée</h2></div></div><form className="contest-form" onSubmit={login}><label>Mot de passe administrateur<input required type="password" value={password} onChange={event=>setPassword(event.target.value)} autoComplete="current-password"/></label>{error?<Notice kind="error">{error}</Notice>:null}<button className="contest-primary" disabled={busy}>{busy?'Connexion…':'Se connecter'}</button></form></section>;
 
   const published=data.entries.filter(entry=>entry.published&&entry.final_image_key);
   const scoreMap=new Map((data.results?.firstRound??[]).map(score=>[score.submission_id,Number(score.points)]));
   const runoffMap=new Map((data.results?.secondRound??[]).map(score=>[score.submission_id,Number(score.votes)]));
-  return <section className="contest-admin">
+  return <section className="contest-admin" dir="ltr">
     <div className="contest-panel-heading"><Shield/><div><div className="contest-kicker">ESPACE ORGANISATEUR</div><h2>Gestion du concours</h2></div><button className="contest-text-button" onClick={()=>{sessionStorage.removeItem('us4a-contest-admin-token');setToken('');setData(null)}}>Quitter</button></div>
     <div className="admin-summary"><div><Users/><strong>{members.length}</strong><span>membres autorisés</span></div><div><Images/><strong>{data.entries.length}</strong><span>participations</span></div><div><Vote/><strong>{data.results?.ballots?.find(item=>item.round===1)?.ballots??0}</strong><span>bulletins reçus</span></div></div>
     <div className="admin-actions"><button className="contest-secondary" onClick={downloadCodes} disabled={busy}><Download size={18}/>Télécharger les codes de vote</button></div>
@@ -336,23 +326,24 @@ function AdminPanel(){
   </section>;
 }
 
-export default function AllianceContest({onOpenGuides}){
+export default function AllianceContest({onOpenGuides,lang='fr'}){
   const[view,setView]=useState('overview');
   const[state,setState]=useState(null);
   const[error,setError]=useState('');
-  useEffect(()=>{api('/public').then(setState).catch(reason=>setError(reason.message))},[]);
+  const t=contestText(lang);
+  useEffect(()=>{api('/public').then(setState).catch(reason=>setError(localizedError(reason,t)))},[]);
   const phase=state?.phase??'setup';
   const tabs=useMemo(()=>[
-    ['overview',Trophy,'Le concours'],
-    ['submit',Upload,'Participer'],
-    ['vote',Vote,'Voter'],
+    ['overview',Trophy,t.tabOverview],
+    ['submit',Upload,t.tabSubmit],
+    ['vote',Vote,t.tabVote],
     ['admin',LockKeyhole,'Organisateur']
-  ],[]);
+  ],[t]);
   return <section className="alliance-contest">
-    <div className="alliance-contest-header"><div className="contest-kicker">US4A — ALLIANCE</div><h1>Concours du plus beau château</h1><p>Créativité, harmonie et plaisir de construire ensemble.</p><span className={`contest-phase phase-${phase}`}>{phaseCopy[phase]??phase}</span></div>
-    <nav className="contest-tabs" aria-label="Rubriques du concours">{tabs.map(([id,Icon,label])=><button key={id} className={view===id?'active':''} onClick={()=>setView(id)}><Icon size={18}/>{label}</button>)}</nav>
+    <div className="alliance-contest-header"><div className="contest-kicker">{t.headerKicker}</div><h1>{t.headerTitle}</h1><p>{t.headerSubtitle}</p><span className={`contest-phase phase-${phase}`}>{t.phase[phase]??phase}</span></div>
+    <nav className="contest-tabs" aria-label={t.tabsAria}>{tabs.map(([id,Icon,label])=><button key={id} className={view===id?'active':''} onClick={()=>setView(id)}><Icon size={18}/>{label}</button>)}</nav>
     {error?<Notice kind="error">{error}</Notice>:null}
-    {view==='overview'?<Overview state={state} onView={setView} onOpenGuides={onOpenGuides}/>:view==='submit'?<SubmissionPanel/>:view==='vote'?<VotePanel/>:<AdminPanel/>}
-    <footer className="contest-footer-note"><LockKeyhole size={15}/>Les captures originales sont privées. Seuls les montages validés par l’organisateur apparaissent pendant le vote.</footer>
+    {view==='overview'?<Overview state={state} onView={setView} onOpenGuides={onOpenGuides} t={t}/>:view==='submit'?<SubmissionPanel t={t}/>:view==='vote'?<VotePanel t={t}/>:<AdminPanel/>}
+    <footer className="contest-footer-note"><LockKeyhole size={15}/>{t.privacy}</footer>
   </section>;
 }

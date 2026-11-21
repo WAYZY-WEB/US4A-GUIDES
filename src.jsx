@@ -132,7 +132,7 @@ function App(){
           </label>
         </div>
         {matches.length?<div className="cards">{matches.map(([id,Icon,label,image])=><button className="card" key={id} onClick={()=>go(id)}><img src={image} alt="" width="720" height="720" loading="lazy"/><span className="card-overlay" aria-hidden="true"/><span className="card-copy"><Icon size={25}/><strong className="card-title">{label}</strong><span>{t.read} <b aria-hidden="true">→</b></span></span></button>)}</div>:<p className="no-results">{t.noResults}</p>}
-      </section>:page==='alliance'?<AllianceContest onOpenGuides={()=>go('alliance-duel')}/>:categoryPage?<section className="category-page">
+      </section>:page==='alliance'?<AllianceContest lang={lang} onOpenGuides={()=>go('alliance-duel')}/>:categoryPage?<section className="category-page">
         <button className="back-button" onClick={()=>go('guides')}><ArrowLeft size={18}/>{t.guides}</button>
         <div className="category-hero">
           <img src={categoryPage[3]} alt="" width="720" height="720"/>
