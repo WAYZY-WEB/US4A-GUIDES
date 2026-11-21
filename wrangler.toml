@@ -1,0 +1,16 @@
+# Cloudflare Pages configuration for US4A Guides.
+# Sensitive values are stored as encrypted Pages secrets, never in this file.
+name = "us4a-guides"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-11-09"
+
+[[d1_databases]]
+binding = "CONTEST_DB"
+database_name = "us4a-contest"
+database_id = "6086ff20-e84f-484c-aa22-1f95a745a534"
+
+[[r2_buckets]]
+binding = "CONTEST_UPLOADS"
+bucket_name = "us4a-contest-uploads"
+
+[env.production]
