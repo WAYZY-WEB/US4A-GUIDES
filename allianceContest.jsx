@@ -193,7 +193,7 @@ function SubmissionPanel(){
 
   return <section className="contest-panel">
     <div className="contest-panel-heading"><Images/><div><div className="contest-kicker">PARTICIPATION DE {submission.memberName}</div><h2>Mes captures du château</h2></div><button className="contest-text-button" onClick={disconnect}>Quitter</button></div>
-    {newCode?<Notice kind="success"><strong>Conservez ce code personnel : {newCode}</strong><br/>Il ne sera affiché qu’une fois et permet de modifier vos images jusqu’à la date limite.</Notice>:null}
+    {newCode?<Notice kind="success"><div className="contest-code-notice"><strong>Conservez ce code personnel : <code>{newCode}</code></strong><span>Il ne sera affiché qu’une fois et permet de modifier vos images jusqu’à la date limite.</span></div></Notice>:null}
     <p>Ajoutez de 1 à 5 images. Elles restent privées et ne sont visibles que par l’organisateur.</p>
     <div className="submission-images">
       {submission.images.map((image,index)=><article key={image.id}><img src={image.url} alt={`Capture ${index+1}`}/><div><span>Capture {index+1}</span><small>{fileSize(image.size_bytes)}</small></div>{!submission.locked?<button aria-label="Retirer cette image" onClick={()=>removeImage(image.id)}><Trash2 size={17}/></button>:null}</article>)}
