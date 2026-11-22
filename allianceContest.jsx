@@ -329,11 +329,12 @@ function AdminPanel(){
   </section>;
 }
 
-export default function AllianceContest({onOpenGuides,lang='fr'}){
-  const[view,setView]=useState('overview');
+export default function AllianceContest({onOpenGuides,lang='fr',initialView='overview',onViewChange}){
+  const[view,setView]=useState(initialView);
   const[state,setState]=useState(null);
   const[error,setError]=useState('');
   const t=contestText(lang);
+  useEffect(()=>setView(initialView),[initialView]);
   useEffect(()=>{api('/public').then(setState).catch(reason=>setError(localizedError(reason,t)))},[]);
   const phase=state?.phase??'setup';
   const tabs=useMemo(()=>[
@@ -342,11 +343,15 @@ export default function AllianceContest({onOpenGuides,lang='fr'}){
     ['vote',Vote,t.tabVote],
     ['admin',LockKeyhole,'Organisateur']
   ],[t]);
+  function changeView(nextView){
+    setView(nextView);
+    onViewChange?.(nextView);
+  }
   return <section className="alliance-contest">
     <div className="alliance-contest-header"><div className="contest-kicker">{t.headerKicker}</div><h1>{t.headerTitle}</h1><p>{t.headerSubtitle}</p><span className={`contest-phase phase-${phase}`}>{t.phase[phase]??phase}</span></div>
-    <nav className="contest-tabs" aria-label={t.tabsAria}>{tabs.map(([id,Icon,label])=><button key={id} className={view===id?'active':''} onClick={()=>setView(id)}><Icon size={18}/>{label}</button>)}</nav>
+    <nav className="contest-tabs" aria-label={t.tabsAria}>{tabs.map(([id,Icon,label])=><button key={id} className={view===id?'active':''} onClick={()=>changeView(id)}><Icon size={18}/>{label}</button>)}</nav>
     {error?<Notice kind="error">{error}</Notice>:null}
-    {view==='overview'?<Overview state={state} onView={setView} onOpenGuides={onOpenGuides} t={t}/>:view==='submit'?<SubmissionPanel t={t}/>:view==='vote'?<VotePanel t={t} phase={phase}/>:<AdminPanel/>}
+    {view==='overview'?<Overview state={state} onView={changeView} onOpenGuides={onOpenGuides} t={t}/>:view==='submit'?<SubmissionPanel t={t}/>:view==='vote'?<VotePanel t={t} phase={phase}/>:<AdminPanel/>}
     <footer className="contest-footer-note"><LockKeyhole size={15}/>{t.privacy}</footer>
   </section>;
 }

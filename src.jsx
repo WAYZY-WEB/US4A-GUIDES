@@ -1,8 +1,11 @@
 import React,{useEffect,useState}from'react';
 import{createRoot}from'react-dom/client';
-import{ArrowLeft,BookOpen,CalendarDays,Castle,Home,Languages,Menu,Search,Shield,Swords,Trophy,X,ZoomIn}from'lucide-react';
+import{ArrowLeft,BookOpen,CalendarDays,Castle,FolderLock,Home,Languages,Menu,PartyPopper,Search,Shield,Swords,Trophy}from'lucide-react';
 import{gearDetails,guideLibrary,libraryUi}from'./guides.js';
 import AllianceContest from'./allianceContest.jsx';
+import{contestText}from'./allianceContestTranslations.js';
+import InternalGuides from'./internalGuides.jsx';
+import{fillNavigationText,navigationText}from'./siteNavigationTranslations.js';
 import'./style.css';
 
 const strings={
@@ -28,19 +31,85 @@ const guideActions={
   ar:{view:'عرض الدليل',close:'إغلاق الدليل'}
 };
 
-const validPages=new Set(['home','guides','alliance','alliance-duel','routines','heroes-squads','gear','troops-training','buildings','bosses-events','combat-rallies']);
-const initialPage=()=>{
-  const requested=new URLSearchParams(window.location.search).get('page');
-  return validPages.has(requested)?requested:'home';
-};
+const supportedLanguages=new Set(Object.keys(languageNames));
+const categoryIds=new Set(Object.keys(guideLibrary));
+const contestBase='/alliance/evenements/concours/plus-beau-chateau';
+const contestViewPaths={overview:contestBase,submit:`${contestBase}/participer`,vote:`${contestBase}/voter`,admin:`${contestBase}/organisateur`};
+const legacyPaths={home:'/',guides:'/guides',alliance:contestBase,...Object.fromEntries([...categoryIds].map(id=>[id,`/guides/${id}`]))};
+
+function cleanPath(pathname){
+  const cleaned=String(pathname??'/').replace(/\/{2,}/g,'/').replace(/\/$/,'');
+  return cleaned||'/';
+}
+
+function initialLanguage(){
+  const requested=new URLSearchParams(window.location.search).get('lang');
+  if(supportedLanguages.has(requested))return requested;
+  const saved=localStorage.getItem('us4a-language');
+  return supportedLanguages.has(saved)?saved:'fr';
+}
+
+function initialPath(){
+  const url=new URL(window.location.href);
+  const legacy=url.searchParams.get('page');
+  return cleanPath(url.pathname==='/'&&legacyPaths[legacy]?legacyPaths[legacy]:url.pathname);
+}
+
+function parseRoute(pathname){
+  const path=cleanPath(pathname);
+  const parts=path.split('/').filter(Boolean);
+  if(!parts.length)return{kind:'home',section:'home'};
+  if(parts[0]==='guides'){
+    if(parts.length===1)return{kind:'guides',section:'guides'};
+    if(parts.length===2&&categoryIds.has(parts[1]))return{kind:'category',section:'guides',category:parts[1]};
+    if(parts.length===3&&categoryIds.has(parts[1]))return{kind:'guide',section:'guides',category:parts[1],slug:parts[2]};
+  }
+  if(parts[0]==='alliance'){
+    if(parts.length===1)return{kind:'alliance',section:'alliance'};
+    if(parts.length===2&&parts[1]==='guides-internes')return{kind:'internal',section:'alliance'};
+    if(parts.length===2&&parts[1]==='evenements')return{kind:'events',section:'alliance'};
+    if(parts.length===3&&parts[1]==='evenements'&&parts[2]==='concours')return{kind:'contests',section:'alliance'};
+    if(path===contestBase)return{kind:'contest',section:'alliance',view:'overview'};
+    const view=Object.entries(contestViewPaths).find(([,viewPath])=>viewPath===path)?.[0];
+    if(view)return{kind:'contest',section:'alliance',view};
+  }
+  return{kind:'not-found',section:'home'};
+}
+
+function pageUrl(path,lang){
+  const url=new URL(cleanPath(path),window.location.origin);
+  if(lang!=='fr')url.searchParams.set('lang',lang);
+  return `${url.pathname}${url.search}`;
+}
+
+function RouteNavigation({crumbs,back,onNavigate,backLabel,breadcrumbLabel}){
+  return <div className="route-navigation">
+    {back?<button className="back-button" onClick={()=>onNavigate(back.path)}><ArrowLeft size={18}/>{fillNavigationText(backLabel,{name:back.label})}</button>:null}
+    <nav className="breadcrumbs" aria-label={breadcrumbLabel}>
+      {crumbs.map((crumb,index)=><React.Fragment key={`${crumb.path}-${index}`}>{index?<span className="breadcrumb-separator" aria-hidden="true">/</span>:null}{index===crumbs.length-1?<span className="breadcrumb-current" aria-current="page">{crumb.label}</span>:<button onClick={()=>onNavigate(crumb.path)}>{crumb.label}</button>}</React.Fragment>)}
+    </nav>
+  </div>;
+}
+
+function HubPage({eyebrow,title,description,cards,onNavigate}){
+  return <section className="section-hub">
+    <header className="hub-header"><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{description}</p></header>
+    <div className={`hub-cards${cards.length===1?' single':''}`}>{cards.map(({path,image,Icon,title:cardTitle,description:cardDescription,action})=><button className="hub-card" key={path} onClick={()=>onNavigate(path)}>
+      <img src={image} alt="" width="1024" height="768" loading="lazy"/><span className="hub-card-shade" aria-hidden="true"/>
+      <span className="hub-card-copy"><Icon size={28}/><strong>{cardTitle}</strong><small>{cardDescription}</small><b>{action}</b></span>
+    </button>)}</div>
+  </section>;
+}
 
 function App(){
-  const[lang,setLang]=useState('fr');
-  const[page,setPage]=useState(initialPage);
+  const[lang,setLang]=useState(initialLanguage);
+  const[path,setPath]=useState(initialPath);
   const[query,setQuery]=useState('');
   const[mobile,setMobile]=useState(false);
-  const[selectedGuide,setSelectedGuide]=useState(null);
-  const t=strings[lang];
+  const t=strings[lang]??strings.en;
+  const nt=navigationText(lang);
+  const ct=contestText(lang);
+  const route=parseRoute(path);
   const categories=[
     ['alliance-duel',Swords,t.allianceDuel,'/images/categories/alliance-duel.jpg'],
     ['routines',CalendarDays,t.routines,'/images/categories/daily-weekly-routines.jpg'],
@@ -51,9 +120,28 @@ function App(){
     ['bosses-events',Trophy,t.bossesEvents,'/images/categories/bosses-events.jpg'],
     ['combat-rallies',Swords,t.combatRallies,'/images/categories/combat-rallies.jpg']
   ];
-  const navigation=[['home',Home,t.home],['guides',BookOpen,t.guides],['alliance',Shield,t.alliance]];
-  const matches=categories.filter(([, ,label])=>label.toLocaleLowerCase(lang).includes(query.trim().toLocaleLowerCase(lang)));
+  const category=categories.find(([id])=>id===route.category);
+  const currentGuides=guideLibrary[route.category]??[];
+  const currentGuide=currentGuides.find(guide=>guide.slug===route.slug);
+  const localizedGuide=currentGuide?currentGuide.localized?.[lang]??{title:currentGuide.title,image:currentGuide.image}:null;
+  const libraryText=libraryUi[lang]??libraryUi.en;
+  const guideAction=guideActions[lang]??guideActions.en;
   const totalGuides=Object.values(guideLibrary).reduce((total,guides)=>total+guides.length,0);
+  const matches=categories.filter(([, ,label])=>label.toLocaleLowerCase(lang).includes(query.trim().toLocaleLowerCase(lang)));
+  const navigation=[['home',Home,t.home,'/'],['guides',BookOpen,t.guides,'/guides'],['alliance',Shield,t.alliance,'/alliance']];
+
+  function navigate(nextPath,{replace=false}={}){
+    const next=cleanPath(nextPath);
+    window.history[replace?'replaceState':'pushState']({},'',pageUrl(next,lang));
+    setPath(next);setMobile(false);
+    window.scrollTo({top:0,left:0,behavior:'auto'});
+  }
+
+  function changeLanguage(nextLang){
+    if(!supportedLanguages.has(nextLang))return;
+    setLang(nextLang);localStorage.setItem('us4a-language',nextLang);
+    window.history.replaceState({},'',pageUrl(path,nextLang));
+  }
 
   useEffect(()=>{
     document.documentElement.lang=lang;
@@ -61,108 +149,65 @@ function App(){
   },[lang]);
 
   useEffect(()=>{
-    if(!selectedGuide)return undefined;
-    const closeOnEscape=event=>{if(event.key==='Escape')setSelectedGuide(null)};
-    document.body.classList.add('modal-open');
-    window.addEventListener('keydown',closeOnEscape);
-    return()=>{
-      document.body.classList.remove('modal-open');
-      window.removeEventListener('keydown',closeOnEscape);
-    };
-  },[selectedGuide]);
-
-  function go(nextPage){
-    setPage(nextPage);
-    setMobile(false);
-    setSelectedGuide(null);
     const url=new URL(window.location.href);
-    if(nextPage==='home')url.searchParams.delete('page');else url.searchParams.set('page',nextPage);
-    window.history.replaceState({},'',url);
-    window.scrollTo({top:0,left:0,behavior:'auto'});
+    if(url.searchParams.has('page')||cleanPath(url.pathname)!==path||(!url.searchParams.has('lang')&&lang!=='fr'))navigate(path,{replace:true});
+    const onPopState=()=>{
+      const urlOnPop=new URL(window.location.href);
+      setPath(cleanPath(urlOnPop.pathname));setMobile(false);
+      const urlLanguage=urlOnPop.searchParams.get('lang');
+      setLang(supportedLanguages.has(urlLanguage)?urlLanguage:'fr');
+    };
+    window.addEventListener('popstate',onPopState);
+    return()=>window.removeEventListener('popstate',onPopState);
+  },[]);
+
+  const crumbs=[{label:t.home,path:'/'}];
+  let back=null;
+  if(route.kind==='guides'){crumbs.push({label:t.guides,path:'/guides'});back={label:t.home,path:'/'};}
+  if(['category','guide'].includes(route.kind)){
+    crumbs.push({label:t.guides,path:'/guides'},{label:category?.[2]??t.guides,path:`/guides/${route.category}`});
+    back={label:route.kind==='guide'?category?.[2]??t.guides:t.guides,path:route.kind==='guide'?`/guides/${route.category}`:'/guides'};
+    if(route.kind==='guide'&&localizedGuide)crumbs.push({label:localizedGuide.title,path});
+  }
+  if(['alliance','internal','events','contests','contest'].includes(route.kind)){
+    crumbs.push({label:t.alliance,path:'/alliance'});
+    if(route.kind==='alliance')back={label:t.home,path:'/'};
+    if(route.kind==='internal'){
+      crumbs.push({label:nt.internalGuides,path:'/alliance/guides-internes'});back={label:t.alliance,path:'/alliance'};
+    }
+    if(['events','contests','contest'].includes(route.kind)){
+      crumbs.push({label:nt.events,path:'/alliance/evenements'});back={label:t.alliance,path:'/alliance'};
+    }
+    if(['contests','contest'].includes(route.kind)){
+      crumbs.push({label:nt.contests,path:'/alliance/evenements/concours'});back={label:nt.events,path:'/alliance/evenements'};
+    }
+    if(route.kind==='contest'){
+      crumbs.push({label:nt.castleContest,path:contestBase});back={label:nt.contests,path:'/alliance/evenements/concours'};
+      if(route.view!=='overview'){
+        const contestLabels={submit:ct.tabSubmit,vote:ct.tabVote,admin:'Organisateur'};
+        crumbs.push({label:contestLabels[route.view],path});back={label:nt.castleContest,path:contestBase};
+      }
+    }
   }
 
-  const categoryPage=categories.find(([id])=>id===page);
-  const currentGuides=guideLibrary[page]??[];
-  const libraryText=libraryUi[lang]??libraryUi.en;
-  const guideAction=guideActions[lang]??guideActions.en;
-  const currentGearDetails=gearDetails[lang]??gearDetails.en;
-  const CurrentIcon=categoryPage?.[1]??BookOpen;
+  let content;
+  if(route.kind==='home')content=<section className="hero" aria-labelledby="hero-title">
+    <picture className="hero-art" aria-hidden="true"><source media="(max-width: 640px)" srcSet="/images/us4a-hero-mobile.png"/><img src="/images/us4a-hero-desktop.png" alt=""/></picture>
+    <div className="hero-content"><div className="eyebrow">{t.hub}</div><h1 id="hero-title">{t.welcome}</h1><p>{t.intro}</p><button type="button" className="hero-cta" onClick={()=>navigate('/guides')}><BookOpen size={20}/>{t.read} — {t.guides}</button></div>
+  </section>;
+  else if(route.kind==='guides')content=<section className="guides-overview"><div className="guides-overview-header"><div className="eyebrow">US4A — GUIDES</div><h1>{t.guides}</h1><p>{totalGuides} {libraryText.guides}</p><label className="search"><Search size={20}/><span className="sr-only">{t.search}</span><input type="search" placeholder={t.search} value={query} onChange={event=>setQuery(event.target.value)}/></label></div>{matches.length?<div className="cards">{matches.map(([id,Icon,label,image])=><button className="card" key={id} onClick={()=>navigate(`/guides/${id}`)}><img src={image} alt="" width="720" height="720" loading="lazy"/><span className="card-overlay" aria-hidden="true"/><span className="card-copy"><Icon size={25}/><strong className="card-title">{label}</strong><span>{t.read}</span></span></button>)}</div>:<p className="no-results">{t.noResults}</p>}</section>;
+  else if(route.kind==='category'&&category)content=<section className="category-page"><div className="category-hero"><img src={category[3]} alt="" width="720" height="720"/><span className="category-hero-shade" aria-hidden="true"/><div className="category-hero-copy"><div className="eyebrow">US4A — GUIDES</div><h1>{category[2]}</h1><p>{currentGuides.length} {currentGuides.length===1?libraryText.guide:libraryText.guides}</p></div></div>{route.category==='gear'?<section className="quick-notes"><div className="eyebrow">{libraryText.quickNotes}</div><div className="quick-notes-grid">{(gearDetails[lang]??gearDetails.en).map(note=><article key={note.title}><h2>{note.title}</h2><ul>{note.bullets.map(bullet=><li key={bullet}>{bullet}</li>)}</ul></article>)}</div></section>:null}<div className="guide-list">{currentGuides.map((guide,index)=>{const localized=guide.localized?.[lang]??{title:guide.title,image:guide.image};return <button type="button" className="guide-item guide-item-localized" key={guide.slug} onClick={()=>navigate(`/guides/${route.category}/${guide.slug}`)} aria-label={`${guideAction.view}: ${localized.title}`}><img src={localized.image} alt="" width="1024" height="1536" loading="lazy"/><span className="guide-item-shade" aria-hidden="true"/><span className="guide-preview-badge"><BookOpen size={16}/>{guideAction.view}</span><span className="guide-item-copy"><span className="guide-number">{String(index+1).padStart(2,'0')}</span><span><h2>{localized.title}</h2><p>{libraryText.guideSummary}</p></span></span></button>;})}</div></section>;
+  else if(route.kind==='guide'&&category&&localizedGuide)content=<article className="guide-detail-page"><header><div className="eyebrow">US4A — GUIDES</div><h1>{localizedGuide.title}</h1><p>{category[2]}</p></header><img className="guide-detail-image" src={localizedGuide.image} alt={`${nt.guideImage} — ${localizedGuide.title}`} width="1024" height="1536"/></article>;
+  else if(route.kind==='alliance')content=<HubPage eyebrow="US4A — ALLIANCE" title={nt.allianceTitle} description={nt.allianceDesc} onNavigate={navigate} cards={[{path:'/alliance/guides-internes',image:'/images/categories/alliance-duel.jpg',Icon:FolderLock,title:nt.internalGuides,description:nt.internalGuidesDesc,action:nt.open},{path:'/alliance/evenements',image:'/images/alliance/castle-contest-announcement.png',Icon:PartyPopper,title:nt.events,description:nt.eventsDesc,action:nt.open}]}/>;
+  else if(route.kind==='internal')content=<InternalGuides lang={lang}/>;
+  else if(route.kind==='events')content=<HubPage eyebrow={`US4A — ${t.alliance}`} title={nt.events} description={nt.eventsDesc} onNavigate={navigate} cards={[{path:'/alliance/evenements/concours',image:'/images/alliance/castle-contest-announcement.png',Icon:Trophy,title:nt.contests,description:nt.contestsDesc,action:nt.open}]}/>;
+  else if(route.kind==='contests')content=<HubPage eyebrow={`US4A — ${nt.events}`} title={nt.contests} description={nt.contestsDesc} onNavigate={navigate} cards={[{path:contestBase,image:'/images/alliance/castle-contest-announcement.png',Icon:Castle,title:nt.castleContest,description:nt.castleContestDesc,action:nt.open}]}/>;
+  else if(route.kind==='contest')content=<AllianceContest lang={lang} initialView={route.view} onViewChange={view=>navigate(contestViewPaths[view])} onOpenGuides={()=>navigate('/guides/alliance-duel')}/>;
+  else content=<section className="inner"><BookOpen size={42}/><div className="eyebrow">US4A — GUIDES</div><h1>{t.soon}</h1><button className="hero-cta" onClick={()=>navigate('/')}>{t.home}</button></section>;
 
   return <>
-    <header className="site-header">
-      <div className="header">
-        <button className="brand" onClick={()=>go('home')} aria-label={t.home}>
-          <img className="brand-avatar" src="/images/logo-us4a-guides.png" alt="Emblème US4A GUIDES" width="46" height="46"/>
-          <span>US4A <b>— GUIDES</b><small>{t.subtitle}</small></span>
-        </button>
-        <button className="hamburger" aria-label={t.menu} aria-expanded={mobile} aria-controls="main-navigation" onClick={()=>setMobile(open=>!open)}><Menu/></button>
-        <nav id="main-navigation" className={mobile?'open':''} aria-label={t.menu}>
-          {navigation.map(([id,Icon,label])=><button key={id} className={page===id?'active':''} aria-current={page===id?'page':undefined} onClick={()=>go(id)}><Icon size={16}/>{label}</button>)}
-        </nav>
-        <label className="language">
-          <Languages size={17}/><span className="sr-only">{t.language}</span>
-          <select aria-label={t.language} value={lang} onChange={event=>{setLang(event.target.value);setSelectedGuide(null)}}>
-            {Object.entries(languageNames).map(([code,label])=><option key={code} value={code}>{label}</option>)}
-          </select>
-        </label>
-      </div>
-    </header>
-    <main>
-      {page==='home'?<>
-        <section className="hero" aria-labelledby="hero-title">
-          <picture className="hero-art" aria-hidden="true">
-            <source media="(max-width: 640px)" srcSet="/images/us4a-hero-mobile.png"/>
-            <img src="/images/us4a-hero-desktop.png" alt=""/>
-          </picture>
-          <div className="hero-content">
-            <div className="eyebrow">{t.hub}</div>
-            <h1 id="hero-title">{t.welcome}</h1>
-            <p>{t.intro}</p>
-            <button type="button" className="hero-cta" onClick={()=>go('guides')}><BookOpen size={20}/>{t.read} — {t.guides}</button>
-          </div>
-        </section>
-      </>:page==='guides'?<section className="guides-overview">
-        <div className="guides-overview-header">
-          <div className="eyebrow">US4A — GUIDES</div>
-          <h1>{t.guides}</h1>
-          <p>{totalGuides} {libraryText.guides}</p>
-          <label className="search">
-            <Search size={20}/><span className="sr-only">{t.search}</span>
-            <input type="search" placeholder={t.search} value={query} onChange={event=>setQuery(event.target.value)}/>
-          </label>
-        </div>
-        {matches.length?<div className="cards">{matches.map(([id,Icon,label,image])=><button className="card" key={id} onClick={()=>go(id)}><img src={image} alt="" width="720" height="720" loading="lazy"/><span className="card-overlay" aria-hidden="true"/><span className="card-copy"><Icon size={25}/><strong className="card-title">{label}</strong><span>{t.read} <b aria-hidden="true">→</b></span></span></button>)}</div>:<p className="no-results">{t.noResults}</p>}
-      </section>:page==='alliance'?<AllianceContest lang={lang} onOpenGuides={()=>go('alliance-duel')}/>:categoryPage?<section className="category-page">
-        <button className="back-button" onClick={()=>go('guides')}><ArrowLeft size={18}/>{t.guides}</button>
-        <div className="category-hero">
-          <img src={categoryPage[3]} alt="" width="720" height="720"/>
-          <span className="category-hero-shade" aria-hidden="true"/>
-          <div className="category-hero-copy"><div className="eyebrow">US4A — GUIDES</div><h1>{categoryPage[2]}</h1><p>{currentGuides.length} {currentGuides.length===1?libraryText.guide:libraryText.guides}</p></div>
-        </div>
-        {page==='gear'?<section className="quick-notes"><div className="eyebrow">{libraryText.quickNotes}</div><div className="quick-notes-grid">{currentGearDetails.map(note=><article key={note.title}><h2>{note.title}</h2><ul>{note.bullets.map(bullet=><li key={bullet}>{bullet}</li>)}</ul></article>)}</div></section>:null}
-        <div className="guide-list">{currentGuides.map((guide,index)=>{
-          const localized=guide.localized?.[lang];
-          const image=localized?.image??guide.image;
-          const title=localized?.title??guide.title;
-          return localized?<button type="button" className="guide-item guide-item-localized" key={guide.slug} onClick={()=>setSelectedGuide({image,title})} aria-label={`${guideAction.view}: ${title}`}>
-            <img src={image} alt="" width="1024" height="1536" loading="lazy"/>
-            <span className="guide-item-shade" aria-hidden="true"/>
-            <span className="guide-preview-badge"><ZoomIn size={16}/>{guideAction.view}</span>
-            <span className="guide-item-copy"><span className="guide-number">{String(index+1).padStart(2,'0')}</span><span><h2>{title}</h2><p>{libraryText.guideSummary}</p></span></span>
-          </button>:<article className="guide-item" key={guide.slug}>
-            <img src={image} alt="" width="720" height="720" loading="lazy"/>
-            <span className="guide-item-shade" aria-hidden="true"/>
-            <div className="guide-item-copy"><span className="guide-number">{String(index+1).padStart(2,'0')}</span><div><h2>{title}</h2><p>{libraryText.guideSummary}</p></div></div>
-          </article>;
-        })}</div>
-      </section>:<section className="inner"><CurrentIcon size={42}/><div className="eyebrow">US4A — GUIDES</div><h1>{t.guides}</h1><p>{t.soon}</p><div className="placeholder"><CurrentIcon size={40}/><span>{t.soon}</span></div></section>}
-    </main>
-    {selectedGuide?<div className="guide-modal" role="dialog" aria-modal="true" aria-label={selectedGuide.title} onClick={()=>setSelectedGuide(null)}>
-      <div className="guide-modal-panel" onClick={event=>event.stopPropagation()}>
-        <button type="button" className="guide-modal-close" onClick={()=>setSelectedGuide(null)}><X size={20}/>{guideAction.close}</button>
-        <img src={selectedGuide.image} alt={selectedGuide.title} width="1024" height="1536"/>
-      </div>
-    </div>:null}
+    <header className="site-header"><div className="header"><button className="brand" onClick={()=>navigate('/')} aria-label={t.home}><img className="brand-avatar" src="/images/logo-us4a-guides.png" alt="Emblème US4A GUIDES" width="46" height="46"/><span>US4A <b>— GUIDES</b><small>{t.subtitle}</small></span></button><button className="hamburger" aria-label={t.menu} aria-expanded={mobile} aria-controls="main-navigation" onClick={()=>setMobile(open=>!open)}><Menu/></button><nav id="main-navigation" className={mobile?'open':''} aria-label={t.menu}>{navigation.map(([id,Icon,label,target])=><button key={id} className={route.section===id?'active':''} aria-current={route.section===id?'page':undefined} onClick={()=>navigate(target)}><Icon size={16}/>{label}</button>)}</nav><label className="language"><Languages size={17}/><span className="sr-only">{t.language}</span><select aria-label={t.language} value={lang} onChange={event=>changeLanguage(event.target.value)}>{Object.entries(languageNames).map(([code,label])=><option key={code} value={code}>{label}</option>)}</select></label></div></header>
+    <main>{route.kind!=='home'?<RouteNavigation crumbs={crumbs} back={back} onNavigate={navigate} backLabel={nt.backTo} breadcrumbLabel={nt.breadcrumb}/>:null}{content}</main>
     <footer><span>US4A — GUIDES</span><span>{t.notice}</span></footer>
   </>;
 }
