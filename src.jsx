@@ -4,6 +4,7 @@ import{ArrowLeft,BookOpen,CalendarDays,Castle,FolderLock,Home,Languages,Menu,Par
 import{gearDetails,guideLibrary,libraryUi}from'./guides.js';
 import AllianceContest from'./allianceContest.jsx';
 import{contestText}from'./allianceContestTranslations.js';
+import AllianceGate from'./allianceGate.jsx';
 import InternalGuides from'./internalGuides.jsx';
 import{fillNavigationText,navigationText}from'./siteNavigationTranslations.js';
 import'./style.css';
@@ -205,9 +206,12 @@ function App(){
   else if(route.kind==='contest')content=<AllianceContest lang={lang} initialView={route.view} onViewChange={view=>navigate(contestViewPaths[view])} onOpenGuides={()=>navigate('/guides/alliance-duel')}/>;
   else content=<section className="inner"><BookOpen size={42}/><div className="eyebrow">US4A — GUIDES</div><h1>{t.soon}</h1><button className="hero-cta" onClick={()=>navigate('/')}>{t.home}</button></section>;
 
+  const routeNavigation=route.kind!=='home'?<RouteNavigation crumbs={crumbs} back={back} onNavigate={navigate} backLabel={nt.backTo} breadcrumbLabel={nt.breadcrumb}/>:null;
+  const pageContent=route.section==='alliance'?<AllianceGate lang={lang}>{routeNavigation}{content}</AllianceGate>:<>{routeNavigation}{content}</>;
+
   return <>
     <header className="site-header"><div className="header"><button className="brand" onClick={()=>navigate('/')} aria-label={t.home}><img className="brand-avatar" src="/images/logo-us4a-guides.png" alt="Emblème US4A GUIDES" width="46" height="46"/><span>US4A <b>— GUIDES</b><small>{t.subtitle}</small></span></button><button className="hamburger" aria-label={t.menu} aria-expanded={mobile} aria-controls="main-navigation" onClick={()=>setMobile(open=>!open)}><Menu/></button><nav id="main-navigation" className={mobile?'open':''} aria-label={t.menu}>{navigation.map(([id,Icon,label,target])=><button key={id} className={route.section===id?'active':''} aria-current={route.section===id?'page':undefined} onClick={()=>navigate(target)}><Icon size={16}/>{label}</button>)}</nav><label className="language"><Languages size={17}/><span className="sr-only">{t.language}</span><select aria-label={t.language} value={lang} onChange={event=>changeLanguage(event.target.value)}>{Object.entries(languageNames).map(([code,label])=><option key={code} value={code}>{label}</option>)}</select></label></div></header>
-    <main>{route.kind!=='home'?<RouteNavigation crumbs={crumbs} back={back} onNavigate={navigate} backLabel={nt.backTo} breadcrumbLabel={nt.breadcrumb}/>:null}{content}</main>
+    <main>{pageContent}</main>
     <footer><span>US4A — GUIDES</span><span>{t.notice}</span></footer>
   </>;
 }
