@@ -65,3 +65,6 @@ body.modal-open{overflow:hidden}.guide-modal{position:fixed;inset:0;z-index:1000
 
 @media(max-width:760px){.route-navigation{display:grid;gap:12px;margin-bottom:18px}.route-navigation .back-button{justify-self:start}.breadcrumbs{overflow-x:auto;max-width:100%;padding:3px 1px 8px;white-space:nowrap;scrollbar-width:thin}.hub-cards{grid-template-columns:1fr}.hub-card{min-height:280px}.hub-card-copy{padding:20px}.hub-header{padding:18px 4px 5px}.hub-header p{font-size:14px}.internal-access-card{margin:18px auto;padding:25px 18px;border-radius:16px}.guide-detail-image{border-radius:11px}.alliance-session-bar{align-items:flex-start;flex-direction:column}.alliance-session-bar button{width:100%;justify-content:center}}
 @media(max-width:390px){.hub-card{min-height:245px}.hub-card-copy strong{font-size:25px}.hub-card-copy small{font-size:12px}.route-navigation .back-button{font-size:12px}.internal-access-card h1{font-size:31px}}
+
+.site-footer{gap:28px;font-size:13px}.site-footer-brand{flex:0 0 auto;color:#aab8cb;letter-spacing:.08em}.site-footer-copy{display:flex;flex-direction:column;gap:5px;max-width:920px;text-align:end;line-height:1.45}.site-footer-copy strong{color:#d8e2ef;font-weight:650}.site-footer-copy span{color:#8799af}[dir="rtl"] .site-footer-copy{text-align:start}
+@media(max-width:640px){.site-footer{gap:12px}.site-footer-copy{text-align:start}}
