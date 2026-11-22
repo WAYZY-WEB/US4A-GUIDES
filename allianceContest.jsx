@@ -194,7 +194,7 @@ function SubmissionPanel({t}){
   </section>;
 }
 
-function VotePanel({t}){
+function VotePanel({t,phase}){
   const[token,setToken]=useState(()=>sessionStorage.getItem('us4a-contest-voter-token')??'');
   const[name,setName]=useState('');
   const[code,setCode]=useState('');
@@ -203,6 +203,7 @@ function VotePanel({t}){
   const[busy,setBusy]=useState(false);
   const[error,setError]=useState('');
   const[message,setMessage]=useState('');
+  const galleryAvailable=['voting','runoff','runoff_pending','closed','results'].includes(phase);
 
   async function load(activeToken=token){
     if(!activeToken)return;
@@ -221,6 +222,8 @@ function VotePanel({t}){
     event.preventDefault();setBusy(true);setError('');setMessage('');
     try{await api('/vote',{method:'POST',token,body:picks});setMessage(t.voteSaved);await load()}catch(reason){setError(localizedError(reason,t))}finally{setBusy(false)}
   }
+
+  if((!token||!gallery)&&!galleryAvailable)return <section className="contest-panel contest-auth-panel"><div className="contest-panel-heading"><Vote/><div><div className="contest-kicker">{t.memberVote}</div><h2>{t.accessBallot}</h2></div></div><Notice><CalendarDays size={18}/><span>{t.errors.gallery_closed}<br/>{t.votePeriod}<br/><strong>{t.serverTimeNote}</strong></span></Notice></section>;
 
   if(!token||!gallery)return <section className="contest-panel contest-auth-panel"><div className="contest-panel-heading"><Vote/><div><div className="contest-kicker">{t.memberVote}</div><h2>{t.accessBallot}</h2></div></div><p>{t.voteAccessDesc}</p><form className="contest-form" onSubmit={login}><label>{t.exactName}<input required value={name} onChange={event=>setName(event.target.value)}/></label><label>{t.personalVoteCode}<input required dir="ltr" value={code} onChange={event=>setCode(event.target.value.toUpperCase())} placeholder="XXXXX-XXXXX"/></label>{error?<Notice kind="error">{error}</Notice>:null}<button className="contest-primary" disabled={busy}>{busy?t.verifying:t.openBallot}</button></form></section>;
 
@@ -343,7 +346,7 @@ export default function AllianceContest({onOpenGuides,lang='fr'}){
     <div className="alliance-contest-header"><div className="contest-kicker">{t.headerKicker}</div><h1>{t.headerTitle}</h1><p>{t.headerSubtitle}</p><span className={`contest-phase phase-${phase}`}>{t.phase[phase]??phase}</span></div>
     <nav className="contest-tabs" aria-label={t.tabsAria}>{tabs.map(([id,Icon,label])=><button key={id} className={view===id?'active':''} onClick={()=>setView(id)}><Icon size={18}/>{label}</button>)}</nav>
     {error?<Notice kind="error">{error}</Notice>:null}
-    {view==='overview'?<Overview state={state} onView={setView} onOpenGuides={onOpenGuides} t={t}/>:view==='submit'?<SubmissionPanel t={t}/>:view==='vote'?<VotePanel t={t}/>:<AdminPanel/>}
+    {view==='overview'?<Overview state={state} onView={setView} onOpenGuides={onOpenGuides} t={t}/>:view==='submit'?<SubmissionPanel t={t}/>:view==='vote'?<VotePanel t={t} phase={phase}/>:<AdminPanel/>}
     <footer className="contest-footer-note"><LockKeyhole size={15}/>{t.privacy}</footer>
   </section>;
 }

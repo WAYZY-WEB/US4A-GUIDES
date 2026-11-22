@@ -17,6 +17,7 @@ const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 const MAX_FINAL_BYTES = 10 * 1024 * 1024;
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const ALLOWED_SETTING_KEYS = new Set(Object.keys(DEFAULT_SETTINGS));
+const VOTER_GALLERY_PHASES = new Set(['voting', 'runoff', 'runoff_pending', 'closed', 'results']);
 
 class HttpError extends Error {
   constructor(status, message, code = 'request_error') {
@@ -643,6 +644,11 @@ async function handleSubmissionImageDelete(request, env, imageId) {
 }
 
 async function handleVoteLogin(request, env) {
+  const settings = await getSettings(env.CONTEST_DB);
+  const phase = contestPhase(settings);
+  if (!VOTER_GALLERY_PHASES.has(phase)) {
+    throw new HttpError(403, 'La galerie de vote n’est pas encore ouverte.', 'gallery_closed');
+  }
   const body = await requestBody(request);
   const member = await env.CONTEST_DB.prepare(`
     SELECT id, name, normalized_name, rank FROM contest_members WHERE normalized_name = ?
@@ -652,7 +658,6 @@ async function handleVoteLogin(request, env) {
   if (!(await safeEqual(String(body.code ?? '').trim().toUpperCase(), expected))) {
     throw new HttpError(401, 'Nom ou code de vote incorrect.', 'invalid_vote_login');
   }
-  const settings = await getSettings(env.CONTEST_DB);
   const ownSubmission = await getSubmissionForMember(env.CONTEST_DB, member.id);
   const token = await createToken({
     type: 'voter',
@@ -663,7 +668,7 @@ async function handleVoteLogin(request, env) {
   return json({
     token,
     member: { name: member.name, rank: member.rank },
-    phase: contestPhase(settings),
+    phase,
     ownSubmissionId: ownSubmission?.id ?? null
   });
 }
@@ -672,7 +677,7 @@ async function handleVoteGallery(request, env) {
   const voter = await requireVoter(request, env);
   const settings = await getSettings(env.CONTEST_DB);
   const phase = contestPhase(settings);
-  if (!['voting', 'runoff', 'runoff_pending', 'closed', 'results'].includes(phase)) {
+  if (!VOTER_GALLERY_PHASES.has(phase)) {
     throw new HttpError(403, 'La galerie de vote n’est pas encore ouverte.', 'gallery_closed');
   }
   const token = bearerToken(request);
@@ -844,39 +849,39 @@ export async function onRequest(context) {
 
     requireBindings(env, path.includes('image') || path.includes('final') || path.startsWith('media/'));
 
-    if (method === 'POST' && path === 'admin/login') return handleAdminLogin(request, env);
-    if (method === 'POST' && path === 'admin/members/import') return handleMemberImport(request, env);
-    if (method === 'GET' && path === 'admin/members') return handleAdminMembers(request, env);
-    if (method === 'GET' && path === 'admin/vote-codes') return handleVoteCodes(request, env);
-    if (method === 'GET' && path === 'admin/entries') return handleAdminEntries(request, env);
-    if (method === 'POST' && path === 'admin/final') return handleAdminFinalUpload(request, env);
-    if (method === 'POST' && path === 'admin/publish-entry') return handleAdminEntryPublish(request, env);
-    if (method === 'POST' && path === 'admin/settings') return handleAdminSettings(request, env);
-    if (method === 'POST' && path === 'admin/podium') return handleAdminPodium(request, env);
+    if (method === 'POST' && path === 'admin/login') return await handleAdminLogin(request, env);
+    if (method === 'POST' && path === 'admin/members/import') return await handleMemberImport(request, env);
+    if (method === 'GET' && path === 'admin/members') return await handleAdminMembers(request, env);
+    if (method === 'GET' && path === 'admin/vote-codes') return await handleVoteCodes(request, env);
+    if (method === 'GET' && path === 'admin/entries') return await handleAdminEntries(request, env);
+    if (method === 'POST' && path === 'admin/final') return await handleAdminFinalUpload(request, env);
+    if (method === 'POST' && path === 'admin/publish-entry') return await handleAdminEntryPublish(request, env);
+    if (method === 'POST' && path === 'admin/settings') return await handleAdminSettings(request, env);
+    if (method === 'POST' && path === 'admin/podium') return await handleAdminPodium(request, env);
 
-    if (method === 'POST' && path === 'submission/start') return handleSubmissionStart(request, env);
-    if (method === 'POST' && path === 'submission/login') return handleSubmissionLogin(request, env);
-    if (method === 'GET' && path === 'submission') return handleSubmissionGet(request, env);
-    if (method === 'POST' && path === 'submission/image') return handleSubmissionImageUpload(request, env);
+    if (method === 'POST' && path === 'submission/start') return await handleSubmissionStart(request, env);
+    if (method === 'POST' && path === 'submission/login') return await handleSubmissionLogin(request, env);
+    if (method === 'GET' && path === 'submission') return await handleSubmissionGet(request, env);
+    if (method === 'POST' && path === 'submission/image') return await handleSubmissionImageUpload(request, env);
     if (method === 'DELETE' && segments[0] === 'submission' && segments[1] === 'image' && segments[2]) {
-      return handleSubmissionImageDelete(request, env, segments[2]);
+      return await handleSubmissionImageDelete(request, env, segments[2]);
     }
 
-    if (method === 'POST' && path === 'vote/login') return handleVoteLogin(request, env);
-    if (method === 'GET' && path === 'vote/gallery') return handleVoteGallery(request, env);
-    if (method === 'POST' && path === 'vote') return handleVoteCast(request, env);
+    if (method === 'POST' && path === 'vote/login') return await handleVoteLogin(request, env);
+    if (method === 'GET' && path === 'vote/gallery') return await handleVoteGallery(request, env);
+    if (method === 'POST' && path === 'vote') return await handleVoteCast(request, env);
 
     if (method === 'GET' && segments[0] === 'media' && segments[1] === 'submission' && segments[2]) {
-      return handleSubmissionMedia(request, env, url, segments[2]);
+      return await handleSubmissionMedia(request, env, url, segments[2]);
     }
     if (method === 'GET' && segments[0] === 'media' && segments[1] === 'admin' && segments[2] === 'image' && segments[3]) {
-      return handleAdminImageMedia(request, env, url, segments[3]);
+      return await handleAdminImageMedia(request, env, url, segments[3]);
     }
     if (method === 'GET' && segments[0] === 'media' && segments[1] === 'admin' && segments[2] === 'final' && segments[3]) {
-      return handleFinalMedia(request, env, url, segments[3], true);
+      return await handleFinalMedia(request, env, url, segments[3], true);
     }
     if (method === 'GET' && segments[0] === 'media' && segments[1] === 'final' && segments[2]) {
-      return handleFinalMedia(request, env, url, segments[2]);
+      return await handleFinalMedia(request, env, url, segments[2]);
     }
 
     throw new HttpError(404, 'Adresse inconnue.', 'not_found');
