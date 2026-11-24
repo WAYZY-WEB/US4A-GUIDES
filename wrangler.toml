@@ -14,3 +14,12 @@ binding = "CONTEST_UPLOADS"
 bucket_name = "us4a-contest-uploads"
 
 [env.production]
+
+[[env.production.d1_databases]]
+binding = "CONTEST_DB"
+database_name = "us4a-contest"
+database_id = "6086ff20-e84f-484c-aa22-1f95a745a534"
+
+[[env.production.r2_buckets]]
+binding = "CONTEST_UPLOADS"
+bucket_name = "us4a-contest-uploads"
