@@ -18,6 +18,18 @@ const MAX_FINAL_BYTES = 10 * 1024 * 1024;
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const ALLOWED_SETTING_KEYS = new Set(Object.keys(DEFAULT_SETTINGS));
 const VOTER_GALLERY_PHASES = new Set(['voting', 'runoff', 'runoff_pending', 'closed', 'results']);
+const CAPTURE_SELECTION_PREFIX = 'vote-captures:';
+const CAPTURE_SELECTION_JOIN = `LEFT JOIN contest_settings selection ON selection.key = '${CAPTURE_SELECTION_PREFIX}' || s.id`;
+const APPROVED_CAPTURES = `
+  SELECT image.id
+  FROM json_each(selection.value) approved
+  JOIN contest_submission_images image ON image.id = approved.value AND image.submission_id = s.id
+  ORDER BY approved.key
+`;
+const HAS_GALLERY_MEDIA = `(
+  (selection.key IS NULL AND s.final_image_key IS NOT NULL)
+  OR EXISTS (${APPROVED_CAPTURES})
+)`;
 
 class HttpError extends Error {
   constructor(status, message, code = 'request_error') {
@@ -235,10 +247,14 @@ async function listSubmissionImages(db, submissionId) {
 
 async function publishedEntries(db) {
   const result = await db.prepare(`
-    SELECT s.id, s.member_id, s.display_label, s.final_image_key, s.final_image_mime, m.name AS member_name
+    SELECT s.id, s.display_label, m.name AS member_name,
+           CASE WHEN selection.key IS NOT NULL THEN (
+             SELECT json_group_array(id) FROM (${APPROVED_CAPTURES})
+           ) END AS approved_capture_ids
     FROM contest_submissions s
     JOIN contest_members m ON m.id = s.member_id
-    WHERE s.published = 1 AND s.final_image_key IS NOT NULL
+    ${CAPTURE_SELECTION_JOIN}
+    WHERE s.published = 1 AND ${HAS_GALLERY_MEDIA}
     ORDER BY s.display_label, s.created_at
   `).all();
   return result.results ?? [];
@@ -280,7 +296,8 @@ async function publicState(env) {
     SELECT
       (SELECT COUNT(*) FROM contest_members) AS members,
       (SELECT COUNT(*) FROM contest_submissions) AS submissions,
-      (SELECT COUNT(*) FROM contest_submissions WHERE published = 1) AS published,
+      (SELECT COUNT(*) FROM contest_submissions s ${CAPTURE_SELECTION_JOIN}
+       WHERE s.published = 1 AND ${HAS_GALLERY_MEDIA}) AS published,
       (SELECT COUNT(*) FROM contest_votes WHERE round = 1) AS ballots
   `).first();
   const response = {
@@ -302,7 +319,7 @@ async function publicState(env) {
       id: entry.id,
       label: entry.display_label,
       memberName: entry.member_name,
-      imageUrl: `/api/contest/media/final/${entry.id}`
+      imageUrl: entry.approved_capture_ids === null ? `/api/contest/media/final/${entry.id}` : null
     } : null;
     response.results = {
       podium: {
@@ -392,9 +409,12 @@ async function handleAdminEntries(request, env) {
   const admin = await requireAdmin(request, env);
   const entriesResult = await env.CONTEST_DB.prepare(`
     SELECT s.id, s.member_id, s.display_label, s.published, s.final_image_key, s.final_image_mime,
-           s.created_at, s.updated_at, m.name AS member_name, m.rank AS member_rank
+           s.created_at, s.updated_at, m.name AS member_name, m.rank AS member_rank,
+           selection.key IS NOT NULL AS uses_captures,
+           (s.published = 1 AND ${HAS_GALLERY_MEDIA}) AS vote_eligible
     FROM contest_submissions s
     JOIN contest_members m ON m.id = s.member_id
+    ${CAPTURE_SELECTION_JOIN}
     ORDER BY s.created_at
   `).all();
   const entries = entriesResult.results ?? [];
@@ -466,15 +486,35 @@ async function handleAdminEntryPublish(request, env) {
   const published = Boolean(body.published);
   const submission = await env.CONTEST_DB.prepare('SELECT final_image_key FROM contest_submissions WHERE id = ?').bind(submissionId).first();
   if (!submission) throw new HttpError(404, 'Participation introuvable.', 'submission_not_found');
-  if (published && !submission.final_image_key) {
+  if (published && !label) throw new HttpError(400, 'Indiquez un nom anonyme, par exemple « Château A ».', 'label_required');
+
+  const db = env.CONTEST_DB;
+  const selectionKey = CAPTURE_SELECTION_PREFIX + submissionId;
+  let selectionUpdate = db.prepare('DELETE FROM contest_settings WHERE key = ?').bind(selectionKey);
+  if (published && body.source === 'captures') {
+    const ids = body.imageIds;
+    if (!Array.isArray(ids) || !ids.length || ids.length > MAX_SUBMISSION_IMAGES ||
+        ids.some(id => typeof id !== 'string') || new Set(ids).size !== ids.length) {
+      throw new HttpError(400, 'Sélectionnez entre une et cinq captures.', 'invalid_capture_selection');
+    }
+    const images = await listSubmissionImages(db, submissionId);
+    const approvedIds = new Set(ids);
+    if (images.length !== ids.length || images.some(image => !approvedIds.has(image.id))) {
+      throw new HttpError(409, 'Les captures ont changé. Actualisez la page avant de les valider.', 'captures_changed');
+    }
+    selectionUpdate = db.prepare(`
+      INSERT INTO contest_settings (key, value, updated_at)
+      VALUES (?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+    `).bind(selectionKey, JSON.stringify(ids));
+  } else if (published && !submission.final_image_key) {
     throw new HttpError(400, 'Ajoutez d’abord le montage final.', 'final_image_required');
   }
-  if (published && !label) throw new HttpError(400, 'Indiquez un nom anonyme, par exemple « Château A ».', 'label_required');
-  await env.CONTEST_DB.prepare(`
+  await db.batch([selectionUpdate, db.prepare(`
     UPDATE contest_submissions
     SET published = ?, display_label = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
-  `).bind(published ? 1 : 0, label || null, submissionId).run();
+  `).bind(published ? 1 : 0, label || null, submissionId)]);
   return json({ updated: true });
 }
 
@@ -507,8 +547,9 @@ async function handleAdminPodium(request, env) {
   }
   const placeholders = ids.map(() => '?').join(',');
   const found = await env.CONTEST_DB.prepare(`
-    SELECT COUNT(*) AS count FROM contest_submissions
-    WHERE published = 1 AND id IN (${placeholders})
+    SELECT COUNT(*) AS count FROM contest_submissions s
+    ${CAPTURE_SELECTION_JOIN}
+    WHERE s.published = 1 AND ${HAS_GALLERY_MEDIA} AND s.id IN (${placeholders})
   `).bind(...ids).first();
   if (Number(found?.count) !== 3) throw new HttpError(400, 'Une création du podium n’est pas publiée.', 'invalid_podium');
   await saveSetting(env.CONTEST_DB, 'podium', podium);
@@ -691,16 +732,24 @@ async function handleVoteGallery(request, env) {
     SELECT first_submission_id, second_submission_id, third_submission_id
     FROM contest_votes WHERE member_id = ? AND round = ?
   `).bind(voter.memberId, currentRound).first();
+  const mediaQuery = `?token=${encodeURIComponent(token)}`;
   return json({
     phase,
     round: currentRound,
     ownSubmissionId: voter.ownSubmissionId,
-    entries: entries.map(entry => ({
-      id: entry.id,
-      label: entry.display_label,
-      imageUrl: `/api/contest/media/final/${entry.id}?token=${encodeURIComponent(token)}`,
-      canVote: entry.id !== voter.ownSubmissionId
-    })),
+    entries: entries.map(entry => {
+      const captureIds = entry.approved_capture_ids === null ? null : JSON.parse(entry.approved_capture_ids);
+      const imageUrl = captureIds ? null : `/api/contest/media/final/${entry.id}${mediaQuery}`;
+      return {
+        id: entry.id,
+        label: entry.display_label,
+        imageUrl,
+        imageUrls: captureIds
+          ? captureIds.map(id => `/api/contest/media/vote/image/${id}${mediaQuery}`)
+          : [imageUrl],
+        canVote: entry.id !== voter.ownSubmissionId
+      };
+    }),
     ballot: ballot ? {
       first: ballot.first_submission_id,
       second: ballot.second_submission_id,
@@ -779,6 +828,31 @@ async function handleAdminImageMedia(request, env, url, imageId) {
   return imageResponse(object);
 }
 
+async function handleVoteCaptureMedia(request, env, url, imageId) {
+  await requireVoter(request, env, url);
+  const settings = await getSettings(env.CONTEST_DB);
+  const now = Date.now();
+  const phase = contestPhase(settings, now);
+  if (now < Date.parse(settings.voteStart) || !VOTER_GALLERY_PHASES.has(phase)) {
+    throw new HttpError(403, 'La galerie de vote n’est pas encore ouverte.', 'gallery_closed');
+  }
+  const image = await env.CONTEST_DB.prepare(`
+    SELECT i.object_key, i.submission_id
+    FROM contest_submission_images i
+    JOIN contest_submissions s ON s.id = i.submission_id
+    ${CAPTURE_SELECTION_JOIN}
+    WHERE i.id = ? AND s.published = 1
+      AND i.id IN (SELECT value FROM json_each(selection.value))
+  `).bind(imageId).first();
+  const isRunoff = phase === 'runoff' || phase === 'runoff_pending';
+  if (!image || (isRunoff && !settings.runoffEntries.includes(image.submission_id))) {
+    throw new HttpError(404, 'Image introuvable.', 'image_not_found');
+  }
+  const object = await env.CONTEST_UPLOADS.get(image.object_key);
+  if (!object) throw new HttpError(404, 'Fichier introuvable.', 'file_not_found');
+  return imageResponse(object);
+}
+
 async function handleFinalMedia(request, env, url, submissionId, adminOnly = false) {
   let isPublic = false;
   if (adminOnly) {
@@ -804,9 +878,12 @@ async function handleFinalMedia(request, env, url, submissionId, adminOnly = fal
     }
   }
   const submission = await env.CONTEST_DB.prepare(`
-    SELECT final_image_key, published FROM contest_submissions WHERE id = ?
+    SELECT s.final_image_key, s.published, selection.key AS capture_selection
+    FROM contest_submissions s
+    ${CAPTURE_SELECTION_JOIN}
+    WHERE s.id = ?
   `).bind(submissionId).first();
-  if (!submission?.final_image_key || (!adminOnly && !submission.published)) {
+  if (!submission?.final_image_key || (!adminOnly && (!submission.published || submission.capture_selection))) {
     throw new HttpError(404, 'Montage introuvable.', 'final_not_found');
   }
   const object = await env.CONTEST_UPLOADS.get(submission.final_image_key);
@@ -876,6 +953,9 @@ export async function onRequest(context) {
     }
     if (method === 'GET' && segments[0] === 'media' && segments[1] === 'admin' && segments[2] === 'image' && segments[3]) {
       return await handleAdminImageMedia(request, env, url, segments[3]);
+    }
+    if (method === 'GET' && segments[0] === 'media' && segments[1] === 'vote' && segments[2] === 'image' && segments[3]) {
+      return await handleVoteCaptureMedia(request, env, url, segments[3]);
     }
     if (method === 'GET' && segments[0] === 'media' && segments[1] === 'admin' && segments[2] === 'final' && segments[3]) {
       return await handleFinalMedia(request, env, url, segments[3], true);

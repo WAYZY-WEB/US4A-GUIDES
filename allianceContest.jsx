@@ -107,7 +107,7 @@ function Results({results,t}){
   const podium=[['1',results.podium?.first],['2',results.podium?.second],['3',results.podium?.third]];
   return <section className="contest-results-public">
     <div className="contest-kicker">{t.officialResults}</div><h2>{t.podiumTitle}</h2>
-    <div className="contest-podium">{podium.map(([place,entry])=>entry?<article key={place} className={`place-${place}`}><span>{place}</span><img src={entry.imageUrl} alt={interpolate(t.creationAlt,{name:entry.memberName})}/><h3>{entry.memberName}</h3><p>{entry.label}</p></article>:null)}</div>
+    <div className="contest-podium">{podium.map(([place,entry])=>entry?<article key={place} className={`place-${place}${entry.imageUrl?'':' podium-no-image'}`}><span>{place}</span>{entry.imageUrl?<img src={entry.imageUrl} alt={interpolate(t.creationAlt,{name:entry.memberName})}/>:null}<h3>{entry.memberName}</h3><p>{entry.label}</p></article>:null)}</div>
   </section>;
 }
 
@@ -194,6 +194,21 @@ function SubmissionPanel({t}){
   </section>;
 }
 
+function VoteCastleCard({entry,t}){
+  const[active,setActive]=useState(0);
+  const images=entry.imageUrls??[entry.imageUrl];
+  const current=Math.min(active,images.length-1);
+  return <article className={!entry.canVote?'own-entry':''}>
+    <img className={entry.imageUrl?'':'vote-capture'} src={images[current]} loading="lazy" referrerPolicy="no-referrer"
+      alt={entry.imageUrl?entry.label:`${entry.label} · ${interpolate(t.capture,{number:current+1})}`}/>
+    {images.length>1?<div className="vote-capture-controls">{images.map((url,index)=><button
+      key={url} type="button" aria-label={interpolate(t.capture,{number:index+1})} aria-pressed={index===current}
+      onClick={()=>setActive(index)}>{index+1}</button>)}</div>:null}
+    <h3>{entry.label}</h3>
+    {!entry.canVote?<span>{t.ownEntry}</span>:null}
+  </article>;
+}
+
 function VotePanel({t,phase}){
   const[token,setToken]=useState(()=>sessionStorage.getItem('us4a-contest-voter-token')??'');
   const[name,setName]=useState('');
@@ -230,7 +245,7 @@ function VotePanel({t,phase}){
   const selectable=gallery.entries.filter(entry=>entry.canVote);
   const isRunoff=gallery.round===2;
   return <section className="contest-panel"><div className="contest-panel-heading"><Vote/><div><div className="contest-kicker">{isRunoff?t.runoffRound:t.mainRound}</div><h2>{isRunoff?t.runoffTitle:t.rankTitle}</h2></div></div>
-    <div className="vote-gallery">{gallery.entries.map(entry=><article key={entry.id} className={!entry.canVote?'own-entry':''}><img src={entry.imageUrl} alt={entry.label}/><h3>{entry.label}</h3>{!entry.canVote?<span>{t.ownEntry}</span>:null}</article>)}</div>
+    <div className="vote-gallery">{gallery.entries.map(entry=><VoteCastleCard key={entry.id} entry={entry} t={t}/>)}</div>
     {selectable.length?(<form className="contest-ballot" onSubmit={saveVote}>
       <label><strong>{isRunoff?t.yourChoice:t.firstChoice}</strong><select required value={picks.first} onChange={event=>setPicks({...picks,first:event.target.value})}><option value="">{t.select}</option>{selectable.map(entry=><option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
       {!isRunoff?<><label><strong>{t.secondChoice}</strong><select required value={picks.second} onChange={event=>setPicks({...picks,second:event.target.value})}><option value="">{t.select}</option>{selectable.map(entry=><option key={entry.id} value={entry.id} disabled={entry.id===picks.first}>{entry.label}</option>)}</select></label><label><strong>{t.thirdChoice}</strong><select required value={picks.third} onChange={event=>setPicks({...picks,third:event.target.value})}><option value="">{t.select}</option>{selectable.map(entry=><option key={entry.id} value={entry.id} disabled={[picks.first,picks.second].includes(entry.id)}>{entry.label}</option>)}</select></label></>:null}
@@ -286,9 +301,18 @@ function AdminPanel(){
     try{const form=new FormData();form.append('submissionId',submissionId);form.append('file',file);await api('/admin/final',{method:'POST',token,form});setMessage('Montage final enregistré.');await load()}catch(reason){setError(reason.message)}finally{setBusy(false)}
   }
 
-  async function publishEntry(entry,published){
-    setBusy(true);setError('');
-    try{await api('/admin/publish-entry',{method:'POST',token,body:{submissionId:entry.id,label:labels[entry.id],published}});setMessage(published?'Création ajoutée au vote.':'Création retirée du vote.');await load()}catch(reason){setError(reason.message)}finally{setBusy(false)}
+  async function publishEntry(entry,published,source){
+    setBusy(true);setError('');setMessage('');
+    const body={submissionId:entry.id,label:labels[entry.id],published,source};
+    if(source==='captures')body.imageIds=entry.images.map(image=>image.id);
+    try{
+      await api('/admin/publish-entry',{method:'POST',token,body});
+      setMessage(!published?'Création retirée du vote.':source==='captures'?'Captures d’origine validées pour le vote.':'Montage ajouté au vote.');
+      await load();
+    }catch(reason){
+      if(reason.code==='captures_changed')await load();
+      setError(reason.code==='captures_changed'?'Les captures ont changé. Vérifiez les nouvelles images, puis validez à nouveau.':reason.message);
+    }finally{setBusy(false)}
   }
 
   async function saveRunoff(){
@@ -298,14 +322,14 @@ function AdminPanel(){
   }
 
   async function publishPodium(){
-    if(!confirm('Publier définitivement le podium et rendre les créations visibles au public ?'))return;
+    if(!confirm('Publier les noms et le classement du podium ? Les montages seront visibles au public. Les captures d’origine resteront réservées aux votants.'))return;
     setBusy(true);setError('');
     try{await api('/admin/podium',{method:'POST',token,body:podium});setMessage('Le podium est maintenant public.');await load()}catch(reason){setError(reason.message)}finally{setBusy(false)}
   }
 
   if(!token||!data)return <section className="contest-panel contest-auth-panel" dir="ltr"><div className="contest-panel-heading"><LockKeyhole/><div><div className="contest-kicker">ESPACE ORGANISATEUR</div><h2>Administration privée</h2></div></div><form className="contest-form" onSubmit={login}><label>Mot de passe administrateur<input required type="password" value={password} onChange={event=>setPassword(event.target.value)} autoComplete="current-password"/></label>{error?<Notice kind="error">{error}</Notice>:null}<button className="contest-primary" disabled={busy}>{busy?'Connexion…':'Se connecter'}</button></form></section>;
 
-  const published=data.entries.filter(entry=>entry.published&&entry.final_image_key);
+  const published=data.entries.filter(entry=>entry.vote_eligible);
   const scoreMap=new Map((data.results?.firstRound??[]).map(score=>[score.submission_id,Number(score.points)]));
   const runoffMap=new Map((data.results?.secondRound??[]).map(score=>[score.submission_id,Number(score.votes)]));
   return <section className="contest-admin" dir="ltr">
@@ -317,10 +341,19 @@ function AdminPanel(){
     {!members.length?<section className="admin-block"><h3>Importer les membres</h3><p>Une ligne par joueur au format <code>Nom;R3</code>. Cette liste reste dans la base privée.</p><textarea rows="10" value={importText} onChange={event=>setImportText(event.target.value)} placeholder="Leischo;R5&#10;Nero2;R4"/><button className="contest-primary" onClick={importMembers} disabled={busy}>Importer la liste</button></section>:null}
 
     <section className="admin-block"><h3>Participations et montages</h3>{data.entries.length?<div className="admin-entries">{data.entries.map(entry=><article key={entry.id}>
-      <header><div><strong>{entry.member_name}</strong><span>{entry.member_rank} · {entry.images.length} image{entry.images.length>1?'s':''}</span></div><span className={entry.published?'published':'private'}>{entry.published?'Dans le vote':'Privée'}</span></header>
+      <header><div><strong>{entry.member_name}</strong><span>{entry.member_rank} · {entry.images.length} image{entry.images.length>1?'s':''}</span></div><span className={entry.vote_eligible?'published':'private'}>{entry.vote_eligible?(entry.uses_captures?'Dans le vote · Captures':'Dans le vote · Montage'):(entry.published?'Captures à revalider':'Privée')}</span></header>
       <div className="admin-raw-images">{entry.images.map((image,index)=><a key={image.id} href={image.url} target="_blank" rel="noreferrer"><img src={image.url} alt={`Capture ${index+1} de ${entry.member_name}`}/><span><Eye size={14}/>Image {index+1}</span></a>)}</div>
       <div className="admin-final-row">{entry.finalImageUrl?<img src={entry.finalImageUrl} alt={`Montage final de ${entry.member_name}`}/>:<div className="admin-final-empty"><FileImage/>Aucun montage final</div>}<label className="contest-secondary"><Upload size={17}/>{entry.finalImageUrl?'Remplacer le montage':'Ajouter le montage'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={event=>uploadFinal(entry.id,event.target.files[0])}/></label></div>
-      <div className="admin-publish-row"><label>Nom anonyme<input value={labels[entry.id]??''} onChange={event=>setLabels({...labels,[entry.id]:event.target.value})} placeholder="Château A"/></label><button className={entry.published?'contest-danger':'contest-primary'} onClick={()=>publishEntry(entry,!entry.published)} disabled={busy}>{entry.published?'Retirer du vote':'Ajouter au vote'}</button></div>
+      <div className="admin-publish-row">
+        <label>Nom anonyme<input value={labels[entry.id]??''} onChange={event=>setLabels({...labels,[entry.id]:event.target.value})} placeholder="Château A"/></label>
+        <div className="admin-publish-actions">
+          {entry.images.length>0&&(!entry.published||entry.uses_captures)?<button className="contest-primary"
+            onClick={()=>publishEntry(entry,true,'captures')} disabled={busy}>{entry.published?'Actualiser les captures':'Utiliser les captures déposées'}</button>:null}
+          {!entry.published&&entry.finalImageUrl?<button className="contest-secondary"
+            onClick={()=>publishEntry(entry,true,'montage')} disabled={busy}>Ajouter le montage au vote</button>:null}
+          {entry.published?<button className="contest-danger" onClick={()=>publishEntry(entry,false)} disabled={busy}>Retirer du vote</button>:null}
+        </div>
+      </div>
     </article>)}</div>:<Notice>Aucune participation pour le moment.</Notice>}</section>
 
     <section className="admin-block"><h3>Résultats du vote principal</h3><div className="admin-score-list">{published.sort((a,b)=>(scoreMap.get(b.id)??0)-(scoreMap.get(a.id)??0)).map(entry=><label key={entry.id}><input type="checkbox" checked={runoff.includes(entry.id)} onChange={event=>setRunoff(event.target.checked?[...runoff,entry.id]:runoff.filter(id=>id!==entry.id))}/><span><strong>{entry.display_label}</strong><small>{entry.member_name}</small></span><b>{scoreMap.get(entry.id)??0} pts{runoffMap.has(entry.id)?` · ${runoffMap.get(entry.id)} vote(s) au second tour`:''}</b></label>)}</div>{published.length?<button className="contest-secondary" onClick={saveRunoff} disabled={busy}>Préparer le second tour avec la sélection</button>:null}</section>
