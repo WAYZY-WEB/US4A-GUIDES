@@ -18,6 +18,9 @@ const MAX_FINAL_BYTES = 10 * 1024 * 1024;
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const ALLOWED_SETTING_KEYS = new Set(Object.keys(DEFAULT_SETTINGS));
 const VOTER_GALLERY_PHASES = new Set(['voting', 'runoff', 'runoff_pending', 'closed', 'results']);
+const EDIT_CODE_VERSION = 'v1';
+const EDIT_CODE_KEY_PREFIX = 'edit-code-version:';
+const EDIT_CODE_JOIN = `LEFT JOIN contest_settings edit_code ON edit_code.key = '${EDIT_CODE_KEY_PREFIX}' || s.id`;
 const CAPTURE_SELECTION_PREFIX = 'vote-captures:';
 const CAPTURE_SELECTION_JOIN = `LEFT JOIN contest_settings selection ON selection.key = '${CAPTURE_SELECTION_PREFIX}' || s.id`;
 const APPROVED_CAPTURES = `
@@ -145,9 +148,11 @@ async function requestBody(request) {
 
 async function getSettings(db) {
   const settings = { ...DEFAULT_SETTINGS };
-  const result = await db.prepare('SELECT key, value FROM contest_settings').all();
+  const keys = [...ALLOWED_SETTING_KEYS];
+  const placeholders = keys.map(() => '?').join(',');
+  const result = await db.prepare(`SELECT key, value FROM contest_settings WHERE key IN (${placeholders})`)
+    .bind(...keys).all();
   for (const row of result.results ?? []) {
-    if (!ALLOWED_SETTING_KEYS.has(row.key)) continue;
     if (['runoffEntries', 'podium', 'resultsPublished'].includes(row.key)) {
       try {
         settings[row.key] = JSON.parse(row.value);
@@ -185,12 +190,26 @@ function contestPhase(settings, now = Date.now()) {
   return 'closed';
 }
 
-function randomCode(length = 12) {
+async function deriveEditCode(secret, submissionId, version) {
+  const bytes = await hmac(secret, `us4a:contest:submission-edit:${EDIT_CODE_VERSION}:${submissionId}:${version}`);
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const bytes = crypto.getRandomValues(new Uint8Array(length));
   let value = '';
-  for (const byte of bytes) value += alphabet[byte % alphabet.length];
+  for (const byte of bytes.subarray(0, 12)) value += alphabet[byte % alphabet.length];
   return `${value.slice(0, 4)}-${value.slice(4, 8)}-${value.slice(8)}`;
+}
+
+async function issueEditCode(secret, submissionId) {
+  const version = crypto.randomUUID();
+  const editCode = await deriveEditCode(secret, submissionId, version);
+  return { editCode, version, hash: await sha256(editCode) };
+}
+
+function saveEditCodeVersion(db, submissionId, version, hash) {
+  return db.prepare(`
+    INSERT INTO contest_settings (key, value, updated_at)
+    SELECT ?, ?, CURRENT_TIMESTAMP FROM contest_submissions WHERE id = ? AND edit_code_hash = ?
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+  `).bind(EDIT_CODE_KEY_PREFIX + submissionId, version, submissionId, hash);
 }
 
 async function memberVoteCode(member, secret) {
@@ -209,7 +228,17 @@ async function requireAdmin(request, env, url = new URL(request.url)) {
 
 async function requireSubmission(request, env, url = new URL(request.url)) {
   const token = bearerToken(request) || queryToken(url);
-  return readToken(token, env.SESSION_SECRET, 'submission');
+  const session = await readToken(token, env.SESSION_SECRET, 'submission');
+  const submission = await env.CONTEST_DB.prepare(`
+    SELECT edit_code.value AS edit_code_version
+    FROM contest_submissions s
+    ${EDIT_CODE_JOIN}
+    WHERE s.id = ? AND s.member_id = ?
+  `).bind(session.submissionId, session.memberId).first();
+  if (!submission || submission.edit_code_version !== (session.editCodeVersion ?? null)) {
+    throw new HttpError(401, 'La session a expiré.', 'expired_session');
+  }
+  return session;
 }
 
 async function requireVoter(request, env, url = new URL(request.url)) {
@@ -228,9 +257,10 @@ function imageResponse(object, isPublic = false) {
 
 async function getSubmissionForMember(db, memberId) {
   return db.prepare(`
-    SELECT s.*, m.name AS member_name, m.rank AS member_rank
+    SELECT s.*, m.name AS member_name, m.rank AS member_rank, edit_code.value AS edit_code_version
     FROM contest_submissions s
     JOIN contest_members m ON m.id = s.member_id
+    ${EDIT_CODE_JOIN}
     WHERE s.member_id = ?
   `).bind(memberId).first();
 }
@@ -410,11 +440,13 @@ async function handleAdminEntries(request, env) {
   const entriesResult = await env.CONTEST_DB.prepare(`
     SELECT s.id, s.member_id, s.display_label, s.published, s.final_image_key, s.final_image_mime,
            s.created_at, s.updated_at, m.name AS member_name, m.rank AS member_rank,
+           edit_code.key IS NOT NULL AS edit_code_available,
            selection.key IS NOT NULL AS uses_captures,
            (s.published = 1 AND ${HAS_GALLERY_MEDIA}) AS vote_eligible
     FROM contest_submissions s
     JOIN contest_members m ON m.id = s.member_id
     ${CAPTURE_SELECTION_JOIN}
+    ${EDIT_CODE_JOIN}
     ORDER BY s.created_at
   `).all();
   const entries = entriesResult.results ?? [];
@@ -444,6 +476,39 @@ async function handleAdminEntries(request, env) {
     settings: await getSettings(env.CONTEST_DB),
     results: await calculateResults(env.CONTEST_DB)
   });
+}
+
+async function handleAdminEditCode(request, env, submissionId) {
+  await readToken(bearerToken(request), env.SESSION_SECRET, 'admin');
+  const db = env.CONTEST_DB;
+  const submission = await db.prepare(`
+    SELECT s.edit_code_hash, edit_code.value AS edit_code_version
+    FROM contest_submissions s
+    ${EDIT_CODE_JOIN}
+    WHERE s.id = ?
+  `).bind(submissionId).first();
+  if (!submission) throw new HttpError(404, 'Participation introuvable.', 'submission_not_found');
+
+  if (request.method === 'GET') {
+    if (submission.edit_code_version) {
+      const editCode = await deriveEditCode(env.SESSION_SECRET, submissionId, submission.edit_code_version);
+      if (await safeEqual(await sha256(editCode), submission.edit_code_hash)) return json({ editCode });
+    }
+    throw new HttpError(409, 'Ce code doit être régénéré pour pouvoir être affiché.', 'edit_code_unavailable');
+  }
+
+  const settings = await getSettings(db);
+  if (Date.now() > Date.parse(settings.submissionDeadline)) {
+    throw new HttpError(403, 'Les participations sont maintenant closes.', 'submissions_closed');
+  }
+  const { editCode, version, hash } = await issueEditCode(env.SESSION_SECRET, submissionId);
+  const [update] = await db.batch([
+    db.prepare('UPDATE contest_submissions SET edit_code_hash = ? WHERE id = ? AND edit_code_hash = ?')
+      .bind(hash, submissionId, submission.edit_code_hash),
+    saveEditCodeVersion(db, submissionId, version, hash)
+  ]);
+  if (!update.meta.changes) throw new HttpError(409, 'Le code vient de changer. Actualisez la page.', 'edit_code_changed');
+  return json({ editCode });
 }
 
 async function handleAdminFinalUpload(request, env) {
@@ -574,15 +639,18 @@ async function handleSubmissionStart(request, env) {
   const existing = await getSubmissionForMember(env.CONTEST_DB, member.id);
   if (existing) throw new HttpError(409, 'Une participation existe déjà. Utilisez votre code personnel pour la modifier.', 'submission_exists');
   const submissionId = crypto.randomUUID();
-  const editCode = randomCode();
-  await env.CONTEST_DB.prepare(`
-    INSERT INTO contest_submissions (id, member_id, edit_code_hash)
-    VALUES (?, ?, ?)
-  `).bind(submissionId, member.id, await sha256(editCode)).run();
+  const db = env.CONTEST_DB;
+  const { editCode, version, hash } = await issueEditCode(env.SESSION_SECRET, submissionId);
+  await db.batch([
+    db.prepare('INSERT INTO contest_submissions (id, member_id, edit_code_hash) VALUES (?, ?, ?)')
+      .bind(submissionId, member.id, hash),
+    saveEditCodeVersion(db, submissionId, version, hash)
+  ]);
   const token = await createToken({
     type: 'submission',
     memberId: member.id,
     submissionId,
+    editCodeVersion: version,
     exp: Date.parse(settings.submissionDeadline) + 24 * 60 * 60 * 1000
   }, env.SESSION_SECRET);
   return json({ token, editCode, member: { name: member.name, rank: member.rank }, submissionId }, 201);
@@ -603,6 +671,7 @@ async function handleSubmissionLogin(request, env) {
     type: 'submission',
     memberId: member.id,
     submissionId: submission.id,
+    editCodeVersion: submission.edit_code_version,
     exp: Date.parse(settings.submissionDeadline) + 24 * 60 * 60 * 1000
   }, env.SESSION_SECRET);
   return json({ token, member: { name: member.name, rank: member.rank }, submissionId: submission.id });
@@ -931,6 +1000,10 @@ export async function onRequest(context) {
     if (method === 'GET' && path === 'admin/members') return await handleAdminMembers(request, env);
     if (method === 'GET' && path === 'admin/vote-codes') return await handleVoteCodes(request, env);
     if (method === 'GET' && path === 'admin/entries') return await handleAdminEntries(request, env);
+    if ((method === 'GET' || method === 'POST') && segments[0] === 'admin' && segments[1] === 'entries' &&
+        segments[2] && segments[3] === 'edit-code' && segments.length === 4) {
+      return await handleAdminEditCode(request, env, segments[2]);
+    }
     if (method === 'POST' && path === 'admin/final') return await handleAdminFinalUpload(request, env);
     if (method === 'POST' && path === 'admin/publish-entry') return await handleAdminEntryPublish(request, env);
     if (method === 'POST' && path === 'admin/settings') return await handleAdminSettings(request, env);

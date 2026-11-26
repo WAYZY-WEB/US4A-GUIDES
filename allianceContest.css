@@ -40,6 +40,20 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+.admin-edit-code:not(:empty) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+}
+.admin-edit-code code {
+  display: inline-block;
+  margin-inline-start: 6px;
+  user-select: all;
+  font-size: 1rem;
+  font-weight: 800;
+}
 .contest-podium .podium-no-image > span {
   position: static;
   margin: 12px auto 0;

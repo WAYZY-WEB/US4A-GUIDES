@@ -266,6 +266,7 @@ function AdminPanel(){
   const[runoff,setRunoff]=useState([]);
   const[podium,setPodium]=useState({first:'',second:'',third:''});
   const[importText,setImportText]=useState('');
+  const[visibleEditCode,setVisibleEditCode]=useState(null);
 
   async function load(activeToken=token){
     if(!activeToken)return;
@@ -275,7 +276,7 @@ function AdminPanel(){
       setLabels(Object.fromEntries(entriesData.entries.map(entry=>[entry.id,entry.display_label??''])));
       setRunoff(entriesData.settings?.runoffEntries??[]);
       setPodium(entriesData.settings?.podium??{first:'',second:'',third:''});setError('');
-    }catch(reason){setError(reason.message);if(['invalid_session','expired_session','unauthorized'].includes(reason.code)){sessionStorage.removeItem('us4a-contest-admin-token');setToken('')}}
+    }catch(reason){setError(reason.message);if(['invalid_session','expired_session','unauthorized'].includes(reason.code)){sessionStorage.removeItem('us4a-contest-admin-token');setToken('');setVisibleEditCode(null)}}
   }
   useEffect(()=>{load()},[]);
 
@@ -294,6 +295,30 @@ function AdminPanel(){
   async function downloadCodes(){
     setBusy(true);setError('');
     try{const blob=await api('/admin/vote-codes',{token});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='codes-vote-us4a.csv';link.click();URL.revokeObjectURL(url)}catch(reason){setError(reason.message)}finally{setBusy(false)}
+  }
+
+  async function showEditCode(entry,regenerate){
+    if(regenerate&&!confirm(`Générer un nouveau code de modification pour ${entry.member_name} ? L’ancien code et les sessions de dépôt ouvertes seront invalidés.`))return;
+    setVisibleEditCode(null);setBusy(true);setError('');setMessage('');
+    try{
+      const result=await api(`/admin/entries/${encodeURIComponent(entry.id)}/edit-code`,{token,method:regenerate?'POST':'GET'});
+      if(sessionStorage.getItem('us4a-contest-admin-token')!==token)return;
+      setVisibleEditCode({entryId:entry.id,code:result.editCode});
+      if(regenerate)setData(previous=>({...previous,entries:previous.entries.map(item=>item.id===entry.id?{...item,edit_code_available:1}:item)}));
+    }catch(reason){
+      if(sessionStorage.getItem('us4a-contest-admin-token')!==token)return;
+      if(reason.code==='edit_code_unavailable')setData(previous=>({...previous,entries:previous.entries.map(item=>item.id===entry.id?{...item,edit_code_available:0}:item)}));
+      setError(reason.message);
+    }finally{setBusy(false)}
+  }
+
+  async function copyEditCode(){
+    try{
+      await navigator.clipboard.writeText(visibleEditCode.code);
+      setMessage('Code de modification copié.');setError('');
+    }catch{
+      setError('Sélectionnez le code affiché pour le copier manuellement.');
+    }
   }
 
   async function uploadFinal(submissionId,file){
@@ -330,10 +355,11 @@ function AdminPanel(){
   if(!token||!data)return <section className="contest-panel contest-auth-panel" dir="ltr"><div className="contest-panel-heading"><LockKeyhole/><div><div className="contest-kicker">ESPACE ORGANISATEUR</div><h2>Administration privée</h2></div></div><form className="contest-form" onSubmit={login}><label>Mot de passe administrateur<input required type="password" value={password} onChange={event=>setPassword(event.target.value)} autoComplete="current-password"/></label>{error?<Notice kind="error">{error}</Notice>:null}<button className="contest-primary" disabled={busy}>{busy?'Connexion…':'Se connecter'}</button></form></section>;
 
   const published=data.entries.filter(entry=>entry.vote_eligible);
+  const canRegenerateCode=Date.now()<=Date.parse(data.settings?.submissionDeadline);
   const scoreMap=new Map((data.results?.firstRound??[]).map(score=>[score.submission_id,Number(score.points)]));
   const runoffMap=new Map((data.results?.secondRound??[]).map(score=>[score.submission_id,Number(score.votes)]));
   return <section className="contest-admin" dir="ltr">
-    <div className="contest-panel-heading"><Shield/><div><div className="contest-kicker">ESPACE ORGANISATEUR</div><h2>Gestion du concours</h2></div><button className="contest-text-button" onClick={()=>{sessionStorage.removeItem('us4a-contest-admin-token');setToken('');setData(null)}}>Quitter</button></div>
+    <div className="contest-panel-heading"><Shield/><div><div className="contest-kicker">ESPACE ORGANISATEUR</div><h2>Gestion du concours</h2></div><button className="contest-text-button" onClick={()=>{sessionStorage.removeItem('us4a-contest-admin-token');setToken('');setData(null);setVisibleEditCode(null)}}>Quitter</button></div>
     <div className="admin-summary"><div><Users/><strong>{members.length}</strong><span>membres autorisés</span></div><div><Images/><strong>{data.entries.length}</strong><span>participations</span></div><div><Vote/><strong>{data.results?.ballots?.find(item=>item.round===1)?.ballots??0}</strong><span>bulletins reçus</span></div></div>
     <div className="admin-actions"><button className="contest-secondary" onClick={downloadCodes} disabled={busy}><Download size={18}/>Télécharger les codes de vote</button></div>
     {message?<Notice kind="success">{message}</Notice>:null}{error?<Notice kind="error">{error}</Notice>:null}
@@ -342,6 +368,17 @@ function AdminPanel(){
 
     <section className="admin-block"><h3>Participations et montages</h3>{data.entries.length?<div className="admin-entries">{data.entries.map(entry=><article key={entry.id}>
       <header><div><strong>{entry.member_name}</strong><span>{entry.member_rank} · {entry.images.length} image{entry.images.length>1?'s':''}</span></div><span className={entry.vote_eligible?'published':'private'}>{entry.vote_eligible?(entry.uses_captures?'Dans le vote · Captures':'Dans le vote · Montage'):(entry.published?'Captures à revalider':'Privée')}</span></header>
+      <div className="admin-edit-code">
+        {visibleEditCode?.entryId===entry.id?<>
+          <span>Code de modification <code dir="ltr">{visibleEditCode.code}</code></span>
+          <button type="button" className="contest-secondary" onClick={copyEditCode}>Copier le code</button>
+          <button type="button" className="contest-text-button" onClick={()=>setVisibleEditCode(null)}>Masquer</button>
+        </>:entry.edit_code_available?(
+          <button type="button" className="contest-secondary" disabled={busy} onClick={()=>showEditCode(entry,false)}><KeyRound size={17}/>Afficher le code de modification</button>
+        ):canRegenerateCode?(
+          <button type="button" className="contest-secondary" disabled={busy} onClick={()=>showEditCode(entry,true)}><KeyRound size={17}/>Générer un nouveau code de modification</button>
+        ):null}
+      </div>
       <div className="admin-raw-images">{entry.images.map((image,index)=><a key={image.id} href={image.url} target="_blank" rel="noreferrer"><img src={image.url} alt={`Capture ${index+1} de ${entry.member_name}`}/><span><Eye size={14}/>Image {index+1}</span></a>)}</div>
       <div className="admin-final-row">{entry.finalImageUrl?<img src={entry.finalImageUrl} alt={`Montage final de ${entry.member_name}`}/>:<div className="admin-final-empty"><FileImage/>Aucun montage final</div>}<label className="contest-secondary"><Upload size={17}/>{entry.finalImageUrl?'Remplacer le montage':'Ajouter le montage'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={event=>uploadFinal(entry.id,event.target.files[0])}/></label></div>
       <div className="admin-publish-row">
